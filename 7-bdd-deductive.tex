@@ -1,0 +1,115 @@
+\chapter{Les bases de données déductives}
+
+L'idée est de coupler une bdd à un ensemble de règles logiques pour en déduire de l'information, et sans passer par un langage de programmation.
+
+Une base de données déductive est constituée
+
+\begin{itemize}
+	\item de prédicats de base (ou extensionnels), dont l'extension est conservée explicitement dans la base de données (base de données extensionnelle)
+	\item de prédicats dérivés (ou intentionnels), dont l'extension est définie par des règles déductives (base de données intentionnelle)
+\end{itemize}
+
+
+	\section{Datalog}
+	
+		\subsection{Syntaxe}
+		
+		Un terme est soit une variable, soit une constante. Une formule atomique ou un atome est un symbole prédicatif appliqué à une liste d'arguments qui sont soit des variables, soit des constantes.
+		
+		Un symbole prédicatif peut être
+		
+		\begin{itemize}
+			\item un nom de prédicat de base (extensionnel) (ex : parent(X,Y))
+			\item un prédicat dérivé (intentionnel) (ex : grandparent(X,Y))
+			\item une relation arithmétique
+		\end{itemize}
+		
+		Ex : $grandparent(X,Y) \leftarrow parent(X,Z) and parent(Z, Y)$
+		
+		Restrictions :
+		
+		\begin{itemize}
+			\item les prédicats apparaissant dans la tête (membre de gauche) de règles sont uniquement des prédicats dérivés, les règles ne définissent donc que des prédicats dérivés.
+			\item conditions de sûreté : toute variable utilisée dans une règle doit apparaître dans au moins un atome dont le prédicat représente une relation, et qui n'est pas précédé d'une négation.
+			
+			Cela permet de garantir que l'évaluation des règles est possible.
+		\end{itemize}
+		
+		Ex :
+			
+		\begin{itemize}
+			\item Non sûr : $q(X, Y ) \leftarrow p(X,Z) \text{ AND NOT } r(X, Y,Z) AND X \geq Y$
+			\item Sûr : $q(X) \leftarrow p(X) \text{ AND } X \geq 0$
+		\end{itemize}
+		
+		
+		\pagebreak
+		\subsection{Interprétation des règles datalog}
+		
+		Calcul de l'extension des prédicats intentionnels définis par des règles datalog :
+		
+		\begin{enumerate}
+			\item si un prédicat intentionnel est la tête de plusieurs règles, son extension est l'union des extensions données par les différentes règles
+			\item pour chaque règle, on considère tous les tuples des relations extensionnelles non précédées d'une négation figurant dans le corps de la règle.
+			
+			Pour chaque combinaison de tuples, si
+			
+			\begin{itemize}
+				\item les tuples sont compatibles avec les occurrences des prédicats extensionnels (attributs pour lesquels une valeur constante est donnée ayant cette valeur)
+				\item les prédicats relationnels niés et les prédicats arithmétiques sont satisfaits
+			\end{itemize}
+			
+			alors on ajoute le tuple défini par la règle.
+		\end{enumerate}
+		
+		La sureté garantit que l'on a ainsi pris en compte toutes les valeurs possibles.
+		
+		
+		\subsection{Conversion de l'algèbre relationnelle}
+		
+		\begin{itemize}
+		\item $r \union s : rus(\overline{t_1}) \leftarrow r(t1)$ et $rus(\overline{t_1}) \leftarrow s(\overline{t_1})$
+		\item $r - s : rms(\overline{t_1}) \leftarrow r(\overline{t_1}) \text{ AND NOT } s(\overline{t_1})$
+		\item $r \times s : rts(\overline{t_1}, \overline{t_2}) \leftarrow r(\overline{t_1}) \text{ AND } s(\overline{t_2})$
+		\item $r \Join s : rjs(\overline{t_1} \union \overline{t_2}) \leftarrow r(\overline{t_1}) \text{ AND } s(\overline{t_2})$
+		\item $\pi_Xr : pr(\overline{t_1} \intersection X) \leftarrow r(\overline{t_1})$
+		\item $\sigma_Cr : sr(\overline{t_1}) \leftarrow r(\overline{t_1}) \text{ AND } C(\overline{t_1})$
+		\end{itemize}
+		
+		\subsection{Structure des règles et récursivité}
+		
+		Pour un ensemble de règles donné, le graphe des règles est défini comme suit :
+		
+		\begin{itemize}
+			\item il y a un noeud dans le graphe pour chaque symbole prédicatif
+			\item il existe un arc d'un noeud $p$ à un noeud $q$ ssi il existe une règle de la forme $q(\dots) \leftarrow \dots p (\dots ) \dots$
+		\end{itemize}
+		
+		Un ensemble de règles est récursif si son graphe comporte un cycle.
+		
+		\dessin{7}
+		
+		Pour évaluer des règles récursives, le principe est de ne mettre dans l'extension des prédicats intentionels récursifs que les tuples qui doivent y figurer.
+		
+		On commence par une extension vide pour ces prédicats, puis on applique les règles jusqu'à ce qu'on obtienne une extension stable, ce qu'on appelle un point fixe (fixpoint).
+		
+		On peut utiliser cette approche tant que les prédicats définis récursivement ne sont pas dans la portée d'un \texttt{not}.
+		
+		\pagebreak
+		Exemple pour le prédicat ancêtre.
+		
+		\dessin{8}
+		
+		On peut utiliser la négation et la récursion en même temps, pour autant qu'elles n'interagissent pas. On impose une restriction : les règles sont stratifiées.
+		
+		Si une règle comporte une négation $q(\dots) \leftarrow \dots \text{ NOT } p(\dots) \dots$, il n'y a pas de chemin de $q$ à $p$ dans le graphe des règles.
+		
+		Le graphe des règles peut alors être stratifié, divisé en couches : il n'y a pas de récursion entre couches et dans une règle définissant un prédicat d'une couche, la négation n'est appliquée qu'à des prédicats des couches inférieures.
+		
+		On peut alors évaluer l'extension des prédicats dérivés par couche.
+		
+		\subsection{Expressivité}
+		
+		Les prédicats définis par des règles non récursives peuvent être exprimés en algèbre relationnelle.
+		
+		Les prédicats définis par des règles récursives ne sont pas toujours exprimables. Par exemple, la fermeture transitive d'une relation (comme la relation ancetre) : son calcul nécessite l'application d'un nombre d'opérations qui dépend du contenu de la base de données.

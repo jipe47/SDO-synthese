@@ -1,0 +1,125 @@
+\chapter{Base de données relationnelle : mise en oeuvre et utilisation}
+
+	\section{Organisation d'un système de gestion de bases de données}
+	
+	Un système de gestion de bases de données est organisé en plusieurs programmes exécutés séparément :
+	
+	\begin{itemize}
+		\item un serveur, qui gère les données et attend des requêtes, les exécute et renvoie le résultat
+		\item une ou des applications qui interagissent avec le serveur, et qui peut être une simple interface où taper des commandes SQL, une interface orientée gestion de bases de données ou une interface permettant d'interroger et de modifier la base de données suivent des opérations prédéfinies.
+	\end{itemize}
+	
+	Un utilisateur peut être en interaction directe avec l'application (architecture à deux niveaux), ou bien en interaction avec un troisième programme qui dialogue avec l'application (ex : client web avec une application exploitée dans le contexte d'un serveur web) (architecture à trois niveaux).
+	
+	
+	
+	\section{Définition de bases de données et de relations}
+	
+		\subsection{Définition d'une base de données}
+		Un système de gestion de bases de données peut généralement gérer plusieurs bases de données.
+	
+		Chaque base de données est un ensemble de tables gérées de façon indépendante et ayant ses propres autorisations d'accès. Une requête ne peut pas utiliser des tables de bases de données différentes.
+	
+		Pour définir une base de donnée, on peut utiliser une interface de gestion ou des commandes SQL (\texttt{create database} et \texttt{drop database}). On précise la base de données à utiliser avec la commande \texttt{use}.
+		
+		\subsection{Définition des tables/relations}
+		
+		Lorsqu'on crée une relation, l'information sur le schéma de la relation est conservé dans un dictionnaire de données (data dictionary).
+		
+		La commande \texttt{create table r (\dots , \dots , \dots)} permet de créer des tables.
+		
+		Ex : create table fournisseurs
+(NOM F varchar(20) not null,
+ADRESSE F varchar(50) not null,
+COMB varchar(10),
+PRIX int)
+
+		\subsection{Domaines des attributs}
+		
+		Domaines prédéfinis :
+		
+		\begin{itemize}
+			\item Nombres entiers : int ou integer et smallint
+			\item Nombres en virgule flottante : float, real et double precision
+			\item Nombres en virgule fixe : decimal(i,j) ou dec(i,j) ou numeric(i,j)
+			\item Chaînes de caractères : char(n) ou character(n), et varchar(n) ou char varying(n) ou character varying(n)
+			\item Chaînes de bits (de booléens) : bit(n) et bit varying(n)
+		\end{itemize}
+		
+		Nouveaux domaines (SQL 2) :
+		
+		\begin{itemize}
+		\item Dates : date (10 car. 'aaaa-mm-jj')
+		\item Heures : time (8 car. 'hh :mm :ss') et time(i) (i+9 car.
+'hh :mm :ss :f1. . .fi') et time with time zone
+		\item Dates + heures : timestamp
+		\item Intervalles de temps (que l'on peut ajouter ou soustraire à une date, un
+temps ou un timestamp) : interval
+		\end{itemize}
+		
+		Ex : \texttt{create table DEPARTMENT
+( DNO int not null,
+DNAME varchar(15) not null,
+MGR ID char(11),
+MGR START date,
+primary key (DNO),
+unique (DNAME),
+foreign key (MGR ID) references EMPLOYEE (EMP ID) ) ;}
+
+
+
+	\section{Contraintes d'intégrité}
+	
+	Lors de la définition d'une relation, on peut spécifier des contraintes d'intégrité. On distingue
+	
+	\begin{itemize}
+		\item les contraintes locales, qui ne concernent que la relation définie
+		\item les contraintes entre relations, ou contraintes de référence, qui impliquent plus d'une relation
+	\end{itemize}
+	
+	
+		\subsection{Contraintes d'intégrité locales}
+		
+		\begin{itemize}
+			\item \texttt{not null} : impose qu'un attribut ne puise pas être sans valeur
+			\item \texttt{default} : spécifie la valeur par défaut
+			\item \texttt{primary key $A_1, \dots , A_n$} : spécifie un ensemble d'attributs constituant une clé, et plus précisément la clé préférentielle
+			\item \texttt{unique $A_1, \dots , A_n$} : spécifie un ensemble d'attributs constituant une clé (autre clé que primaire)
+		\end{itemize}
+		
+		\subsection{Contraintes d'intégrité référentielles et clés étrangères}
+		
+		Un tuple dans une relation qui fait référence à un tuple d'une autre relation doit faire référence à un tuple existant dans cette relation.
+		
+		Soient $R_1$ et $R_2$ deux schémas de relation $K = \ens{A_1, \dots,  A_n} \subseteq R_1$, avec $K$ la clé (primaire) de $R_1$, et $FK = \ens{B_1, \dots,  B_n} \subseteq R_2$, avec $dom(A_i) = dom(B_i)$ pour $1 \leq i \leq n$.
+		
+		$FK$ est une clé étrangère de $R_2$ si pour tout $t(R_2)$ de $r_2$
+		
+		\begin{itemize}
+			\item soit il existe dans $r_1$ un tuple $s(R_1)$ tel que $t[FK] = s[K]$ ($t$ fait référence à $s$)
+			\item soit $t[FK]$ n'a pas de valeur (nulle)
+		\end{itemize}
+		
+		\subsection{Autres contraintes}
+		
+		On peut définir des contraintes comme des dépendances, des contraintes de cardinalité, contraintes sur les valeurs de un ou plusieurs attributs.
+		
+		Ces contraintes peuvent être vérifiées au niveau de l'application ou de la base de données. Dans ce dernier cas, il faut que la base de données dispose des possibilités suivantes :
+		
+		\begin{itemize}
+			\item définition d'assertions
+			\item procédures de la base de données
+			\item possibilité de déclencher ces procédures lorsque certains évènements surviennent (triggers)
+		\end{itemize}
+		
+		
+		\subsection{Définition de vues}
+		
+		Une vue est une relation dérivée d'autres relations enregistrées dans la base de données : \texttt{create view v($A_1, \dots , A_k$) as Q}, où \texttt{Q} est une requête SQL.
+		
+		Ex : create view tout-brule-vend(COMB, PRIX) as
+select COMB, PRIX
+from fournisseurs
+where NOM F='Tout-Brule'
+
+		Les vues fournissent une vue partielle des données et imposent des restrictions d'accès (les mises à jour s'effectuent rarement dans une vue).

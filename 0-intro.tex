@@ -1,0 +1,150 @@
+\chapter{Introduction}
+
+Une base de données est un ensemble de données conservées à long terme sur un ordinateur. Elle a comme caractéristiques
+
+\begin{itemize}
+	\item une grande quantité et persistance ;
+	\item la possibilité d'être interrogée et modifiée aisément ;
+	\item la gestion sûre d'accès fréquents et multiples (transactions).
+\end{itemize}
+
+Un système de gestion de bases de données (SGBD ou DBMS) est un programme générique qui permet de définir, de mettre en oeuvre et d'exploiter une base de données.
+
+Pour réaliser un système générique de base de données, il faut un cadre (ou modèle) permettant de définir le schéma des données à traiter. On distingue 3 composantes :
+
+\begin{itemize}
+	\item le modèle (cadre de définition) : concepts utilisés pour structurer et définir les données ;
+	\item le schéma (type, plan) : organisation de la base de données ; description de l'organisation des données et de leur type. Ne varie pas au cours de l'utilisation ;
+	\item l'instance (extension) : contenu réel de la base de données à un moment fixé.
+\end{itemize}
+
+	\section{Modèle entité-relation}
+	
+	C'est un cadre de définition général du type de contenu potentiel d'une base de données. Il y a deux types génériques de base :
+	
+	\begin{itemize}
+		\item les ensembles d'entités : ensembles d'objets de même structure (pour lesquels on enregistre les mêmes informations) ;
+		\item les relations (ou associations) entre ces ensembles.
+	\end{itemize}
+	
+		\subsection{Les entités}
+		
+		Objet au sujet duquel on conserve de l'information dans la base de donnée. Une entité doit pouvoir être distinguée d'une autre entité.
+		
+		Les entités sont regroupées en ensembles d'entités semblables, de même type, pour lesquelles ont veut conserver la même information (ex : employés d'une firme).
+		
+		Le choix de l'ensemble revient au concepteur, et a pour conséquence que les informations conservées dans la base de données au sujet d'entités d'un même ensemble doivent avoir la même forme.
+		
+		\subsection{Les relations}
+		
+		Une relation entre un ensemble d'entités $E_1, \dots , E_k$ est un sous-ensemble du produit cartésien $E_1 \times E_k$. C'est donc un ensemble de k-tuples $(e_1, \dots,  e_k)$ tels que $e_1 \in E_1, \dots , e_k \in E_k$.
+		
+		$k$ est le degré de la relation ; si $k = 2$ la relation est binaire, si $k = 3$ la relation est ternaire.
+		
+		\subsection{Description et schéma des ensembles d'entités}
+		
+		Un ensemble d'entités est décrit par un nom et un type (la liste de ses attributs) (ex : "employés de l'Ulg" que l'on appelle employé\_ulg et "cours de l'Ulg" que l'on appelle cours\_ulg).
+		
+		Une relation est décrite par un nom et une liste ordonnée de noms d'ensembles d'entités (son type) (ex : enseigne : employé\_ulg, cours\_ulg).
+		
+		Le rôle d'un ensemble d'entités est sa participation à une relation (par exemple dans la relation enseigne, le rôle de employé\_ulg est "enseignant", celui de cours\_ulg est "cours enseigné").
+		
+		Pour chaque ensemble d'entités d'une relation, on précise un intervalle de tuples de la relation chaque entité peut apparaître : un min (généralement 0 ou 1) et un max (généralement 1 ou N/$\infty$).
+		
+		Pour un rôle, si min $>0$, la participation de l'ensemble d'entités est dite totale. Si $min = 0$, la participation est partielle.
+		
+		\dessinS{2}{.4}
+		
+		\dessinS{3}{.5}
+			
+		\subsection{Attributs}
+		
+		Les attributs sont les informations conservées au sujet d'entités d'un ensemble. Toutes les entités d'un ensemble ont les mêmes attributs, qui chacun ont un nom unique (dans le contexte de cet ensemble d'entités) et prend des valeurs dans un domaine spécifique (type de l'attribut).
+		
+		Un attribut peut être
+		
+		\begin{itemize}
+			\item simple (atomique) ou composite (décomposable en plusieurs attributs plus simples) (ex : adresse = rue, boîte, ville, pays, ...)
+			\item obligatoire ou facultatif
+			\item à valeur unique ou à plusieurs valeurs
+			\item enregistré ou dérivé (d'un autre attribut)
+		\end{itemize}
+		
+		
+		\subsection{Notion de clé}
+		
+		Une clé d'un ensemble d'entités est constituée d'attributs de l'ensemble d'entités et/ou de rôles joués par d'autres ensembles d'entités dans leur relation avec cet ensemble d'entités (relations identifiantes).
+		
+		Deux entités distinctes ne peuvent avoir la même clé.
+		
+		Un ensemble d'entités faibles est un ensemble qui ne dispose pas d'attributs constituant une clé. Ces entités se distinguent par
+		\begin{itemize}
+			\item certains de ses attributs et
+			\item le fait qu'elles sont en relation avec d'autres ensembles d'entités
+		\end{itemize}
+		
+		\subsection{Attributs et clés de relations}
+		
+		Les relations peuvent avoir des attributs.
+		
+		Une clé d'une relation identifie de façon unique un tuple parmi tous ceux de la relation ; elle est constituée de rôles joués par des ensembles d'entités dans cette relation et/ou d'attributs de la relation.
+		
+		\subsection{Contraintes d'intégrité}
+		
+		Ce sont les contraintes que doivent satisfaire les données d'une base de donnée. On compte comme contrainte :
+		
+		\begin{itemize}
+			\item les contraintes de cardinalité (min, max)
+			\item les clés
+			\item les contraintes sur les attributs (lient les valeurs d'un attribut)
+			\item les contraintes référentielles (on ne fait référence qu'à une entité existante)
+			\item etc
+		\end{itemize}
+		
+		\subsection{Relation IS-A}
+		
+		Définition d'une hiérarchie entre les ensembles d'entités, qui correspond à une structure d'inclusion.
+		
+		\subsection{Spécialisation et généralisation}
+		
+		Un ensemble d'entités inclus s'appelle sous-classe (ou ensemble d'entités spécifiques). Un ensemble d'entités qui en comprend d'autres est une super-classe (ou ensemble d'entités génériques).
+		
+		Une classe peut être divisée selon plusieurs critères indépendants, avec pour chacun plusieurs spécialisations (taxonomies) différentes.
+		
+		Une classe peut être la sous-classe de plusieurs sous-classes.
+		
+		Deux catégories de contraintes indépendantes :
+		
+		\begin{itemize}
+			\item quand l'union des sous-classes donne la super-classe, les sous-classes constituent une couverture de la super-classe. Dans ce cas, la cardinalité minimum du rôle de la super-classe dans la relation IS-A est 1 s'il y a couverture, 0 sinon.
+			
+			\item les sous-classes d'une super-classe peuvent être disjointes ou non. Dans ce cas, la cardinalité maximum du rôle de la super-classe dans la relation IS-A est 1 si les sous-classes sont disjointes, N sinon.
+		\end{itemize}
+		
+		
+		L'inclusion d'ensemble d'entités implique l'héritage des propriétés (attributs et rôles). Si un ensemble est sous-classe de deux classes différentes, c'est de l'héritage multiple, et on n'a plus une hiérarchie d'inclusion (arbre) mais un graphe dirigé acyclique (DAG).
+		
+	\section{SGBD}
+	
+	Un SGBD doit permettre de définir, mettre en oeuvre et exploiter une base de donnée à un niveau suffisamment abstrait ; plus précisément,
+	
+	\begin{itemize}
+		\item le support d'un modèle de données
+		\item le support de langages de haut niveau pour définir la structure des données, l'accès et la manipulation des données
+		\item la gestion des transactions : parallélisme des opérations sur la base de données
+		\item le contrôle d'accès : restrictions d'accès et vérification de la validité des données
+		\item la capacité de récupération en cas de panne
+	\end{itemize}
+	
+	\dessin{1}
+	
+		\subsection{Indépendance entre niveaux}
+		
+		Une indépendance existe si une modification à un niveau ne nécessite pas une modification du niveau supérieur. Il y a deux types d'indépendance :
+		
+		\begin{itemize}
+			\item physique : entre niveaux physique et conceptuel
+			\item logique : entre niveaux conceptuel et vue
+		\end{itemize}
+		
+		Le modèle entité-relation sert de référence dans la conception de schémas de bases de données, toutefois il n'est pas implémenté dans les SGBD : le modèle relationnel est plus simple et plus facile à implémenter.

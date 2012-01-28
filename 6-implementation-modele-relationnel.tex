@@ -1,0 +1,226 @@
+\chapter{Implémentation du modèle relationnel}
+
+	\section{Les disques et leurs caractéristiques}
+	
+	Un disque comporte un ensemble de surfaces. Sur chaque surface, on trouve un ensemble de pistes (track) concentriques.
+	
+	Chaque piste est divisée en secteurs de capacité fixe. Ce sont les plus petits groupes de données adressables et transférables sur un disque.
+	
+	Un cylindre est l'ensemble des pistes se trouvant à une position identique sur les différentes surfaces.
+	
+	Les secteurs sont parfois aussi appelés blocs, mais ce terme désigne aussi des groupes de secteurs traités logiquement comme une seule entité au niveau du système de gestion du disque.
+	
+	Pour accéder à un secteur, il faut positionner les têtes de lecture du disque sur le bon cycle (seek time, le temps de recherche) et attendre que le bon secteur passe sous les têtes de lecture (latency, temps de latence). La durée moyenne est de l'ordre de 10ms, mais pour des secteurs consécutifs on a des temps de l'ordre de 10 $\mu$s par secteur.
+	
+	
+	\section{Technologie RAID}
+	
+	Cette technologie permet d'obtenir des grosses capacités et de meilleurs performances, en utilisant un ensemble de disques qui seront gérés comme un seul disque virtuel.
+	
+	Il y a plusieurs niveaux RAID :
+	
+	\begin{itemize}
+		\item striping (niveau 0) : écriture par bande ; on distribue les données entre les disques du RAID, pour paralléliser les accès.
+		
+		On distingue deux types de striping :
+		
+		\begin{itemize}
+			\item le striping au niveau du bit : on crée des groupes de 8 disques et les bits de chaque octet sont répartis entre ces disques
+			\item le striping au niveau du bloc : on utilise $n$ disques et on écrit le bloc $i$ sur le bloc $(i \mod n) + 1$
+		\end{itemize}		
+		
+		\item mirroring (niveau 1) : partitionnement des disques en deux groupes, et maintient sur chacun des groupes d'une copie complète des données. Chaque opération d'écriture est réalisée simultanément et symétriquement sur chacun des 2 groupes.
+	\end{itemize}
+	
+	Les autres niveaux RAID prévoient une redondance par l'utilisation de codes de correction d'erreur.
+	
+	L'écriture par bandes peut être combinée à l'écritoire miroir ou avec les codes de correction d'erreur.
+	
+	Avec une redondance suffisante, on arrive à une excellente fiabilité et on peut même remplacer les disques défaillants sans arrêt du système (échange à chaud, hot swapping).
+	
+	
+	\section{Implémentation des relations par les fichiers ISAM}
+	
+	Pour permettre l'utilisation des disques, les systèmes d'exploitation fournissent un système de gestion de fichiers, des ensembles de données auquel on attribue un nom. Les noms des fichiers sont gérés dans un catalogue (directory) hiérarchique qui permet de trouver rapidement les fichiers conservés sur un disque.
+	
+	Les fichiers de base disponibles dans un système d'exploitation sont vu comme une séquence d'octets destinée à être lue et écrite séquentiellement.
+	
+	Pour implémenter une base de données, il faut des fichiers organisés sous la forme d'un ensemble de tuples ou enregistrements (records) et des technique permettant de retrouver rapidement un enregistrement à partir de sa clé (ou à partir d'autres attributs)
+	
+		
+	Les systèmes de BD utilisent des fichiers ISAM (Indexed Sequential Access Method) pour conserver les relations. Un parcours séquentiel est possible, mais on ajoute des index (indexes) permettant de retrouver rapidement le bloc dans lequel se trouve un enregistrement.
+		
+	Habituellement, on construit un index pour la clé des enregistrements (et suivant les besoins pour d'autres attributs).
+	
+	
+		\subsection{Les B-trees}
+		
+		Un B-tree est utilisé pour les index ; c'est un arbre équilibré et optimisé pour l'utilisation sur disque.
+		
+		L'équilibre est maintenu en le réorganisant périodiquement, mais en laissant varier le nombre de successeurs de chaque noeud dans certains limites. L'implémentation sera optimale si les noeuds du b-tree ont la taille d'un secteur.
+		
+		Pour $n$ enregistrement, la recherche se fait en $\bigoh(n)$ sans index, en $\bigoh (\log n)$ avec un index. Par contre, plus il y a d'index pour un fichier, plus les opérations de modification sont longues.
+		
+		\subsection{Les tables de hash}
+		
+		Deuxième forme d'index plutôt utilisée pour des relations temporaires conservées en mémoire.
+		
+		Les enregistrements sont répartis entre des bacs regroupés dans un tableau. Un bac peut contenir un ou plusieurs enregistrements (chaînage).
+		
+		On prévoit un nombre de bacs supérieur au nombre d'enregistrements prévus, ce qui donne un nombre moyen d'enregistrements par bac inférieur à 1. 
+		
+		Le numéro de bac dans lequel un enregistrement est placé est calculé à partir de la clé de l'enregistrement par une fonction de hash, qui idéalement répartit les enregistrements uniformément entre les bacs. Pour accéder à un enregistrement, il suffit de calculer son numéro de bac avec la fonction de hash.
+		
+		Les fonctions de hash parfaites n'existent pas, mais il est possible de trouver des fonctions avec d'excellents résultats. Pour $n$ enregistrements, le temps d'accès est de $\bigoh (1)$.
+	
+	
+		\subsection{Index en SQL}
+		
+		Les index sont spécifiés au moment de créer la table. Par défaut, un index est créé pour la clé primaire ; il est possible d'ajouter ou de supprimer un index d'une table (\texttt{create index}, \texttt{drop index} ).
+	
+		Il est parfois possible de préciser si un index doit être réalisé à l'aide d'un B-tree ou d'une table de hachage.
+		
+	\section{Implémentation des opérations de l'algèbre relationnelle}
+	
+	On va poser 
+	
+	\begin{itemize}
+		\item $n_r$ le nombre de tuples de $r$
+		\item $V(X, r)$ : le nombre de valeurs distinctes qui apparaissent dans $r$ pour les attributs $X$ ; nombre de tuples distincts dans $\pi_Xr$. 
+		
+		Le nombre moyen d'occurences de tuples de même valeurs pour les attributs $X$ est donc $\frac{n_r}{V(X,r)}$
+		
+		\item $s_r$ la taille des tuples, pour par exemple déterminer le nombre d'enregistrements par bloc.
+	\end{itemize}
+	
+		\subsubsection{Opérations booléennes}
+		
+		\paragraph{$r_1 \union r_2$}
+		
+		Avec une implémentation directe, on a $\bigoh (n_{r_1} + n_{r_2})$.
+		
+		Si on peut éliminer les occurrences multiples, on peut
+		
+		\begin{itemize}
+			\item trier le résultat : $\bigoh ((n_{r_1} + n_{r_2}) \log (n_{r_1} + n_{r_2}))$
+			\item utiliser un index existant, par exemple pour $r_1$ et n'ajouter à $r_1$ que les tuples de $r_2$ qui ne figurent pas dans $r_1$ : $\bigoh (\nr{1} + \nr2 \log (\nr{1})$
+		\end{itemize}
+		
+		
+		\paragraph{$r_1 - r_2$} on peut
+		
+		\begin{itemize}
+			\item trier les deux relations et les parcourir ensuite séquentiellement, en éliminant de $r_1$ les tuples de $r_2$ : $\bigoh(\nr{1} \log (\nr{1}) + \nr{2} \log(\nr{2}) ) $
+			\item utiliser un index existant pour $r_2$ : considérer chaque tuple de $r_1$ et le chercher dans $r_2$ en utilisant l'index : $\bigoh ( \nr{1} \log (\nr{2}))$
+		\end{itemize}
+		
+		
+		\subsubsection{Sélection et projection}
+		
+		\paragraph{$\sigma_Fr_1$}
+		
+		\begin{itemize}
+			\item au pire considérer chaque tuple de $r_1$ et tester la condition $F$ : $\bigoh(\nr{1})$
+			\item meilleur complexité s'il y a des index adaptés à la condition de sélection
+		\end{itemize}
+		
+		
+		\paragraph{$\pi_Xr_1$}
+		
+		\begin{itemize}
+			\item en général : parcours de $r_1$ avec extraction des composantes nécessaires de chaque tuple : $\bigoh (\nr{1})$
+			\item si on veut éliminer les occurrences multiples, il faut trier la relation $r_1$ : $\bigoh(\nr{1} \log (\nr{1}))$
+		\end{itemize}		
+		
+		\subsubsection{Produit cartésien et joint}
+		
+		\paragraph{$r_1 \times r_2$} Par définition, le produit cartésien contient $\nr{1} \times \nr{2}$ tuples, et nécessite un temps de calcul $\bigoh (\nr{1} \times \nr{2})$
+		
+		\paragraph{$r_1 \Join r_2$} les stratégies diffèrent selon qu'il existe un index ou non pour l'une ou l'autre relation.
+		
+		\begin{itemize}
+			\item Joint sans index : soient $X$ les attributs communs de $R_1$ et $R_2$.
+			
+			Naïvement, on peut examiner toutes les paires de tuples et comparer les valeurs et les attributs communs : $\bigoh(\nr{1} \times \nr{2})$ 
+			
+			Ou bien on trie les deux relations par rapport à leurs attributs communs, et on fusionne les résultats. On a $\bigoh (\nr{1} \log(\nr{1}) + \nr{2} \log(\nr{2}))$ pour autant que $\frac{\nr{i}}{V(X, r_i)}$ soit borné par les attributs communs $X$.
+			
+			
+			\item Joint avec une table de hash : on construit une table de hash pour $r_2$ sur les attributs communs $X$. On parcourt $r_1$ et pour chaque tuple de $r_1$ (et sa valeur pour $X$), on va chercher dans la table de hash les tuples de $r_2$ qui ont la même valeur pour $X$.
+			
+			Complexité : $\bigoh(\nr{1} + \nr{2})$, pour autant que $\frac{\nr{2}}{V(X, r_2)}$ soit borné pour les attributs communs $X$.
+			
+			
+			
+			\item Joint en présence d'un index : on suppose que $r_2$ possède un index pour les attributs communs $X$. On parcourt $r_1$ et pour chaque tuple de $r_1$ (et sa valeur pour $X$), on va chercher dans $r_2$ les tuples qui ont la même valeur pour $X$.
+			
+			Complexité : $\bigoh(\nr{1} (1 + \log(\nr{2})))$
+		\end{itemize}
+		
+	\section{Optimisation des requêtes}
+	
+	
+	Principes généraux de l'optimisation :
+	
+	\begin{itemize}
+		\item générer différentes stratégies d'évaluation et en estimer le coût. Choisir la meilleure.
+		\item règle heuristique : effectuer les sélections et projections dès que possible
+		\item il est utile d'avoir des informations statistiques sur le contenu de la base de données pour bien estimer le coût de différentes stratégies d'évaluation
+	\end{itemize}
+	
+	Soient des relations $r$ de schéma $R$, $s$ de schéma $S$ et $u$ de schéma $U$.
+
+	
+		\subsection{Associativité et commutativité du joint}
+		
+		$$r \Join s = s \Join r$$
+		$$r \Join ( s \Join u) = (r \Join s ) \Join u$$
+		
+		Cela peut optimiser le calcul de joints multiples.
+		
+		
+		\subsection{Groupement des conditions de sélection}
+		
+		$$\sigma_{F_1} \sigma_{F_2} r = \sigma_{F_1 \wedge F_2} r$$
+		
+		Utilité :
+		
+		\begin{itemize}
+			\item remplacer plusieurs sélections par une seule
+			\item décomposer une sélection pour exploiter un index
+			\item décomposer une sélection pour qu'elle puisse en partir être permutée avec une autre opération
+		\end{itemize}
+		
+		\subsection{Sélection et projection}
+		
+		$$\pi_X\sigma_{A = a} r = \pi_X\sigma_{A=a}\pi_{X \union A^r}$$
+		
+		Cela permet d'appliquer la sélection à une relation plus petite.
+		
+		\subsection{Sélection et joint}
+		
+		Soit un attribut $A \in R$
+		
+		$$\sigma_{A = a} (r \Join s ) = (\sigma_{A = a} r ) \Join s$$
+		
+		Cela permet de réduire la taille des relations avant le calcul d'un joint.
+		
+		\subsection{Sélection et union ou différence}
+		
+		$$\sigma_{A = a } (r \union s) = (\sigma_{A = a} r) \union (\sigma_{A = a}s)$$
+		$$\sigma_{A = a } (r - s) = (\sigma_{A = a} r) - (\sigma_{A = a}s)$$
+		
+		On réduit la taille des relations dès que possible.
+		
+		\subsection{Projection et joint}
+		
+		$$\pi_R (r \Join s) = \pi_X (\pi_{R \intersection (X \union S)} r \Join \pi_{S \intersection (X \union R)} s)$$
+		
+		
+		\subsection{Projection et union}
+		
+		$$\pi_X(r \union s) = (\pi_X r) \union (\pi_X s)$$
+		
+		Minimiser la taille des relations avant le calcul de l'union.
+		
+		

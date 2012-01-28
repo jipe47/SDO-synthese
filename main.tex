@@ -1,0 +1,46 @@
+\documentclass[9pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb} 
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{fullpage}
+\usepackage{verbatim}
+
+\author{Jean-Philippe Collette}
+\title{Synthèse Bases de données}
+\usepackage{framed}
+
+\newenvironment{cadre}{\begin{framed} \begin{minipage}{0.9\textwidth}}{\end{minipage} \end{framed}}
+
+\newcommand{\ens}[1]{\lbrace #1 \rbrace}
+\newcommand{\ensemble}[1]{\lbrace #1 \rbrace}
+\newcommand{\dessin}[1]{\begin{center}\includegraphics[scale=0.45]{images/#1.png}\end{center}}
+\newcommand{\dessinS}[2]{\begin{center}\includegraphics[scale=#2]{images/#1.png}\end{center}}
+
+\newcommand{\n}{~\\}
+
+\newcommand{\union}{\bigcup}
+\newcommand{\intersection}{\bigcap}
+\newcommand{\bigoh}{\mathcal{O}}
+\newcommand{\nr}[1]{n_{r_#1}}
+
+\makeindex
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\include{0-intro}
+\include{1-modele-relationnel}
+\include{2-dependances-normalisation}
+\include{3-pratique}
+\include{4-mise-en-oeuvre}
+\include{5-transaction}
+\include{6-implementation-modele-relationnel}
+\include{7-bdd-deductive}
+\include{8-bdd-oo}
+\include{9-integration-donnees}
+	
+\end{document}

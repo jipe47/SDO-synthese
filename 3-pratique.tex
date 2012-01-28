@@ -1,0 +1,185 @@
+\chapter{Langages d'interrogation}
+
+	\section{Multi-ensembles}
+	Un multi-ensemble (multiset) est une collection d'éléments pour laquelle on tient compte de la multiplicité (le multi-ensemble $\ens{1, 1, 2, 3}$ est différent de $\ens{1, 2, 3}$).
+
+	Les systèmes de bases de données considèrent les relations comme des multi-ensembles, car
+
+	\begin{itemize}
+		\item travailler avec des multi-ensembles accélère certaines opérations, car il n'est pas nécessaire de rechercher les occurrences multiples de tuples (projection, union) ;
+		\item pour certaines opérations (ex : calcul d'une moyenne), c'est nécessaire.
+	\end{itemize}
+	
+	\subsection{Algèbre relationnelle des multi-ensembles}
+	Soient deux relations $r$ et $s$ de schéma $R$ et $S$ et un tuple $t$ qui apparait $m$ fois dans $r$ et $n$ fois dans $s$. Si $R = S$,
+	
+	\begin{itemize}
+		\item dans $r \union s$, $t$ apparaît $m + n$ fois ;
+		\item dans $r \intersection s$, $t$ apparaît $min(m, n)$ fois ;
+		\item dans $r \backslash s$, $t$ apparaît $max(0, m - n)$ fois.
+	\end{itemize}
+	
+	Les autres opérations s'étendent aussi aux multi-ensembles :
+	\begin{itemize}
+		\item projection : la projection de chaque tuple est conservée, même si certains tuples deviennent identiques
+		\item sélection : les tuples qui satisfont la condition de sélection sont conservés, y compris les occurrences multiples
+		\item produit cartésien : toutes les combinaisons de tuples sont considérées avec leur multiplicité ; pour un tuple $t_1$ qui apparaît $m$ fois dans $r$ et un tuple $t_2$ $n$ f ois dans $s$, le tuple $t_1 t_2$ apparaît $mn$ fois dans $r \times s$
+		\item joint : idem que pour le produit cartésien
+	\end{itemize}
+
+	\dessin{6}
+	
+	
+	\subsection{Valeur nulle}
+	
+	Il est souvent utile d'indiquer qu'un attribut d'un tuple n'a pas de valeur, car
+	
+	\begin{itemize}
+		\item cette valeur n'est pas connue au moment de l'insertion du tuple
+		\item la valeur n'existe pas
+	\end{itemize}
+	
+	Une valeur nulle est représentée par $\perp$ ou \texttt{NULL}. On peut éviter les valeurs nulles en décomposant les relations au maximum, mais cela aura un impact négatif sur les performances et la lisibilité du schéma.
+	
+	
+	\subsection{Extension de l'algèbre relationnelle}
+	
+	\paragraph{Elimination de tuples redondants}
+	
+	$\Delta (r)$ élimine les occurrences multiples de la relation $r$
+	
+	\paragraph{Opérateurs calculant des valeurs agrégées}
+	
+	Sum, Avg, Min, Max, Count (compte le nombre d'occurrence d'un attribut en tenant compte des occurrences multiples, en fait calcule le nombre de tuples de la relation).
+	
+	
+	\paragraph{Opérateur de groupement}
+	
+	 Opérateur $\gamma_L(r)$ où $L$ est une liste d'éléments qui sont
+	 
+	 \begin{itemize}
+	 	\item un élément $A$ du schéma $R$ de $r$ par rapport auquel le groupement est réalisé. Les tuples ayant la même valeur pour l'attribut $A$ sont alors placés dans le même groupe ;
+	 	\item une opération d'agrégation $OP(A) \rightarrow B$ pour indiquer que dans chaque groupe, l'opération $OP$ est appliquée à l'attribut $A$ et le résultat est attribué à l'attribut $B$.
+	 \end{itemize}
+	 
+	 Le calcul de $\gamma_L(r)$ se fait d'abord en groupant les tuples, puis en introduisant pour chaque groupe un tuple comportant les valeurs des attributs de groupement, et une valeur pour chaque attribut qui correspond à une opération d'agrégation définie dans $L$.
+	 
+	 
+	 \paragraph{Opérateur de tri} $\tau_L(r)$, où $L$ est la liste ordonnée des attributs par rapport auxquels on trie.
+	 
+	 
+	\paragraph{Opérateur de projection étendu} On peut vouloir renommer un attribut, on introduit un attribut dont la valeur est calculée à partir d'autres attributs. On a $\pi_L$, où les éléments de $L$ sont
+	
+	\begin{itemize}
+		\item un attribut
+		\item une contrainte de la forme $A \rightarrow B$, indiquant que l'attribut $A$ est renommé $B$
+		\item une contrainte de la forme $expr \rightarrow A$, où $expr$ est une expression arithmétique dont les éléments sont des attributs. La valeur de l'expression est prise comme valeur pour l'attribut $A$ dans les tuples de la relation, projetée.
+	\end{itemize}
+
+
+	\paragraph{Joint externe (outerjoin)} Avec un joint $r \Join s$, les tuples de $r$ ($s$) qui ne peuvent être combinés avec aucun tuple de $s$ ($r$) sont dit sans appui (dangling), ils n'apparaîtront pas dans le résultat du joint.
+	
+	Avec le join externe $\overset{\circ}{\Join}$, ces tuples sont complétés par des valeurs nulles. Il y a des variantes à gauche et à droite, pour ne compléter les tuples que de la relation à gauche ou à droite. Le $\theta$-joint peut être aussi étendu de cette façon.
+	
+		 	 
+	 \section{SQL}
+	 
+	 Une requête \texttt{SELECT \dots FROM \dots WHERE} se détermine ainsi :
+	 
+	 \begin{enumerate}
+	 	\item on examine les combinaisons de tuples de relations $r_1, \dots , r_m$ (spécifiées avec \texttt{FROM})
+	 	\item pour chaque combinaison, on détermine si la clause \texttt{WHERE} est satisfaite
+	 	\item si oui, on produit un tuple qui comporte les attributs spécifiés par \texttt{SELECT}
+	 \end{enumerate}
+	 
+	 	\subsection{Opérations booléennes}
+	 	
+	 	Mots-clés : union, intersect, except (différence)
+	 	
+	 	Les relations auxquelles on applique ces opérations doivent être de même schéma.
+	 	
+	 	\subsection{Copies multiples}
+	 	
+	 	Par défaut, les copies multiples de tuples sont conservées, sauf avec l'opérateur \texttt{union}.
+	 	
+	 	On peut forcer un autre comportement avec les mots clés \texttt{all} et \texttt{distinct} :
+	 	
+	 	\begin{itemize}
+	 		\item \texttt{SELECT distinct $A_1, \dots , A_n$ FROM $r_1, \dots , r_m$ WHERE P}
+	 		\item \texttt{SELECT \dots union all SELECT \dots}
+	 	\end{itemize}
+	 	
+	 	\subsection{Réutiliser une relation}
+	 	
+	 	Il est parfois nécessaire de comparer les tuples d'une même relation entre eux.
+	 	
+	 	En algèbre relationnelle, on effectue le produit de la relation avec elle-même. En SQL, on mentionne deux fois la relation dans la clause \texttt{FROM}, en attribuant un indicateur à chacune des occurences.
+	 	
+	 	On parle parfois de "variable tuple".
+	 	
+	 	Ex : Quels sont le nom et l'adresse de tous les clients dont le solde dû est
+inférieur à celui de Dupont, A. ?
+
+\texttt{select C1.NOM, C1.ADRESSE from CLIENTS C1, CLIENTS C2 where C1.SOLDE DU < C2.SOLDE DU and C2.NOM = 'Dupont, A.'}
+
+		
+		\subsection{Requêtes imbriquées}
+		
+		La condition \texttt{WHERE} de \texttt{SELECT} peut être une condition relative à un ensemble lui-même définit par le résultat d'un autre \texttt{SELECT}.
+
+		Ex : Quels sont les fournisseurs qui fournissent au moins un combustible commandé par 'Dupont, A.' ?
+		\texttt{select NOM F
+from FOURNISSEURS
+where COMB in  
+select COMB
+from COMMANDES
+where NOM = 'Dupont, A.'}
+		
+		On peut aussi tester le résultat d'une requête imbriquée et voir si c'est un ensemble vide ou non.
+		
+		ex : Quel est le nom des clients qui ont émis au moins une commande de bois ?
+		\texttt{select NOM from CLIENTS where exists
+( select * from COMMANDES where CLIENTS.NOM = COMMANDES.NOM and COMB = 'bois' )}
+
+		\subsection{Test d'absence de valeur et valeurs nulles}
+		
+		On peut utiliser \texttt{not exists}, ou bien \texttt{is null} pour détecter l'absence de valeur.
+		
+		Lorsqu'un attribut a la valeur nulle, le résultat n'est ni vrai ni faux, il est inconnu.
+		
+		\subsection{Joints explicites}
+		
+		\begin{itemize}
+			\item produit cartésien : \texttt{cross join}
+			\item joint naturel : \texttt{natural join}
+			\item $\theta$ - joint : \texttt{r join s on }
+			\item joint-externe : mots clés \texttt{full outer}, \texttt{left outer} ou \texttt{right outer}
+		\end{itemize}
+			
+		\subsection{Agrégation et groupement}
+		
+		\texttt{avg, count, sum, min, max, stddev, variance}
+		
+		On peut partitionner les tuples d'une relation en groupes sur lequels appliquer des fonctions d'agrégation.
+		
+		\texttt{group by $A_1, \dots , A_k$}
+		
+		\subsection{Comparaison de chaînes de caractères}
+		
+		Le caractère \texttt{\%} dénote un nombre quelconque de caractères quelconques, tandis que \texttt{\_} dénote un caractère quelconque.
+		
+		Pour les comparaisons, on utilise \texttt{like} et \texttt{not like}
+		
+		Ex : Quel est le nom des fournisseurs dont l'adresse contient 'Laville' comme sous-chaîne ?
+		
+		\texttt{select NOM F from FOURNISSEURS where ADRESSE F like '\%Laville\%'}
+
+Donner le nom et le prénom des employés qui sont nés dans les années 60 (sachant qu'une date de naissance est une chaîne de caractères du type
+aaaammjj).
+
+\texttt{select FNAME, LNAME from EMPLOYEE where BDATE like '196\_\_\_\_\_'}
+		
+		\subsection{Tri}
+		
+		Le tri de fait avec \texttt{order by}, de manière ascendante (\texttt{asc}) ou descendante (\texttt{desc})
+		

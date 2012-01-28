@@ -1,0 +1,442 @@
+\chapter{Dépendances et normalisation des relations}
+
+Une série de problèmes peuvent apparaître lorsqu'on utilise un schéma de relation :
+
+\begin{itemize}
+	\item de la redondance
+	\item des problèmes d'inconsistance
+	\item des anomalies d'insertion
+	\item des anomalies de suppression
+\end{itemize}
+
+La solution est de décomposer le schéma en plusieurs sous-schémas.
+
+
+	\section{Les dépendances fonctionnelles}
+	
+	La redondance vient du fait que l'information a une structure particulière. Par exemple \textit{FOURNISSEURS(NOM\_F, ADRESSE\_F, COMB, PRIX)} : si on connaît \textit{NOM\_F}, on connaît \textit{ADRESSE\_F}.	Un fournisseur n'a qu'une adresse ; on ne peut avoir deux tuples qui ont la même valeurs \textit{NOM\_F} et des valeurs différentes de \textit{ADRESSE\_F}.
+	
+	Le problème est de choisir les schémas de relation en accord avec cette structure, et pour cela on a besoin d'une représentation de la structure de l'information.
+	
+		\subsection{Définition}
+		
+		Soit un schéma de relation $R(A_1, \dots , A_n)$ et soient $X, Y \subseteq \ens{A_1, \dots , A_n}$.
+		
+		Les ensembles $X$ et $Y$ définissent une dépendance fonctionnelle, notée $X \rightarrow Y$.
+		
+		Une relation $r$ de schéma $R$ satisfait la dépendance fonctionnelle $X \rightarrow Y$ si, pour tout tuples $t_1, t_2 \in r$, si $t_1[X] = t_2[X]$, alors $t_1[Y] = t_2[Y]$.
+		
+		On associe une dépendance au schéma d'une relation ; elle indique une caractéristiques des données que l'on veut modéliser (tout comme le schéma). On suppose dès lors que toute relation se trouvant dans la base de données satisfait les dépendances. Le système pourrait refuser toute modification qui violerait une dépendance.
+		
+		Pour des ensembles d'attributs $X, Y$, on définit l'union comme $XY (= X \cup Y)$.
+		
+		\subsection{L'implication des dépendances}
+		
+		Soient $F$ et $G$ deux ensembles de dépendances.
+		
+		\begin{itemize}
+			\item une dépendance $X \rightarrow Y$ est impliquée logique par $F$ (noté $F \models X \rightarrow Y$) si toute relation qui satisfait $F$ satisfait aussi $X \rightarrow Y$
+			
+			\item $F$ et $G$ sont (logiquement) équivalents (noté $F \equiv G$) si toute dépendance de $G$ est impliquée logiquement par $F$ et vice-versa
+			\item la fermeture de $F$ est l'ensemble $F^+$ des dépendances logiquement impliquées par $F$, c'està-à-dire
+			
+			$$F^+ = \ens{X \rightarrow Y \vert F \models X \rightarrow Y}$$
+		\end{itemize}
+		
+		
+		\subsection{Propriétés des dépendances fonctionnelles}
+		
+		Les dépendances satisfont les règles suivantes :
+		
+		\begin{itemize}
+			\item réflexivité : si $Y \subseteq X$, alors $X \rightarrow Y$
+			\item augmentation si $X \rightarrow Y$ et $Z \subseteq U$, alors $XZ \rightarrow Y Z$
+			\item transitivité : si $X \rightarrow Y$ et $Y \rightarrow Z$, alors $X \rightarrow Z$
+			\item union : si $X \rightarrow Y$ et $X \rightarrow Z$, alors $X \rightarrow YZ$
+			\item décomposition : si $X \rightarrow Y$, alors $X \rightarrow Z$ si $Z \subseteq Y$
+		\end{itemize}
+		
+		La conséquence des deux dernières règles est qu'une dépendance $X \rightarrow A_1 A_2 \dots A_n$ est équivalente à l'ensemble des dépendances $X \rightarrow A_1$, $X \rightarrow A_2$, \dots , $X \rightarrow A_n$.
+		
+		\subsection{Fermeture d'un ensemble d'attributs}
+		
+		Soit $F$ un ensemble de dépendances et $X \subseteq U$ un ensemble d'attributs pris parmi un ensemble d'attributs $U$. La fermeture $X^+$ à partir de $X$ par rapport à l'ensemble de dépendances $F$ est l'ensemble des $A \in U$ tels que $F \models X \rightarrow A$.
+		
+		Si on peut calculer la fermeture d'un ensemble d'attributs, il est simple de déterminer si une dépendance $X \rightarrow Y$ est impliquée logiquement par un ensemble de dépendances $F$ :
+		
+		\begin{enumerate}
+			\item calculer $X^+$ par rapport à $F$
+			\item si $Y \subseteq X^+$, alors $F \models X \rightarrow Y$, sinon $F \nVDash X \rightarrow Y$
+		\end{enumerate}
+		
+		Cela permet de calculer $F^+$ :
+		
+		$$F^+ = \ens{X \rightarrow Y \vert F \models X \rightarrow Y } = \ens{ X \rightarrow Y \vert X \subseteq U \text{ et } Y \subseteq X^+ }$$
+		
+		Le nombre de dépendances dans $F^+$ peut être très grand, exponentiel en fonction du nombre d'attributs.
+		
+			\subsubsection{Algorithme de calcul de fermeture}
+			
+			Soit $F$ un ensemble de dépendances et $X \subseteq U$ un ensemble d'attributs. L'algorithme calcule une suite d'ensembles d'attributs $X^{(0)}, X^{(1)}, \dots$.
+			
+			Données : $X, U, F$
+			
+			\begin{enumerate}
+				\item $X^{(0)} = X$
+				\item $X^{(i + 1)} = X^{(i)} \cup \ens{ A \vert \exists Z : Y \rightarrow Z \in F \text{ et } A \in Z \text{ et } Y \subseteq X^{(i)} }$
+				
+				\item si $X^{(i + 1)} = X^{(i)}$, l'algorithme s'arrête.
+			\end{enumerate}
+			
+			L'algorithme s'arrête toujours puisque $X^{(0)} \subseteq X^{(1)} \subseteq \dots \subseteq  U$
+			
+			\paragraph{Théorème} L'algorithme donné calcule bien $X^+$, c'est-à-dire que, quand l'algorithme s'arrête, $X^{(i_f)} = \ens{ A \vert F \models X \rightarrow A}$.
+			
+			\underline{Preuve} : On va monter la double inclusion.
+			
+			\begin{enumerate}
+				\item montrons que $X^{(i_f)} \subseteq X^+ = \ens{A \vert F \models X \rightarrow A}$ par induction :
+				
+				\begin{enumerate}
+					\item initialement, $X^{(0)} = X \subseteq X^+$
+					\item si $X^{(i)} \subseteq X^+$, alors $X^{(i + 1)} \subseteq X^+$. Par la définition de $X_{i + 1}$, si $F \models X \rightarrow A$ pour tout $A \in X^{(i)}$, alors on a $F \models X \rightarrow A$ pour tout $A \in X^{(i + 1)}$
+				\end{enumerate}
+				
+				\item montrons que $X^+ \subseteq X^{(i_f)}$, c'est-à-dire $X^+ - X^{(i_f)} = \emptyset$.
+				
+				Pour ce faire, on va montrer que pour toute dépendance $X \rightarrow B$ telle que $B \notin X^{(i_f)}$, on a $F \nVDash X \rightarrow B$ et donc $B \notin X^+$. Il faut donc prouver qu'il existe une relation qui satisfait les dépendances de $F$, mais qui ne satisfait pas $X \rightarrow B$, avec un exemple :
+				
+				\dessin{4}
+				
+				Cette relation ne satisfait pas $X \rightarrow B$ vu que $X \subseteq X^{(i_f)}$ et que $B \notin X^{(i_f)}$. On va montrer qu'elle ne satisfait pas $F$.
+				
+				Si $r$ ne satisfait pas $F$, il y aurait dans $F$ une dépendance $V \rightarrow W$ telle que $V \subseteq X^{(i_f)}$ et $W \nsubseteq X^{(i_f)}$, par définition de $R$.
+				
+				Mais dans ce cas, l'algorithme de calcul de $X^+$ ne se serait pas arrêté et aurait ajouté les attributs de $W$.				
+			\end{enumerate}
+			
+			
+		\subsection{Couverture d'un ensemble de dépendances}
+		
+		Par définition, deux ensembles de dépendances $F$ et $G$ sont équivalents si pour tout $X \rightarrow Y \in F$ on a $G \models X \rightarrow Y$ et vice-versa, ou bien si $F^+ = G^+$. On cherche une description la plus succincte possible d'un ensemble de dépendances à l'équivalence près.
+		
+		$F$ est une couverture pour un ensemble de dépendances $G$ si $F \equiv G$. Une couverture $F$ de $G$ est minimale si
+		
+		\begin{enumerate}
+			\item $F$ contient uniquement des dépendances du type $X \rightarrow A$
+			\item $\nexists (X \rightarrow A) \in F : F - \ens{X \rightarrow A} \equiv F$
+			\item $\nexists (X \rightarrow A) \in F \text{ et } \nexists Z \subset X : ( F - \ens{X \rightarrow A} ) \cup \ens{Z \rightarrow A} \equiv F$
+		\end{enumerate}
+		
+		
+		\paragraph{Théorème} Tout ensemble de dépendances a une couverture minimale.
+		
+		\underline{Preuve} : On peut obtenir une couverture minimale en procédant ainsi :
+		
+		\begin{enumerate}
+			\item toute dépendance $X \rightarrow Y$ avec $Y = \ens{A_1 , \dots , A_n}$ est remplacée par les dépendances $X \rightarrow A_1$, \dots , $X \rightarrow A_n$
+			\item on élimine le plus de dépendances (redondantes) possible
+			\item on élimine le plus d'attributs possibles des membres de gauche
+		\end{enumerate}
+		
+		Les couvertures minimales ne seront en général pas uniques.
+		
+		
+		\subsection{Notion de clé}
+		
+		La notion de clé peut se définir à partir des dépendances ; soit $F$ un ensemble de dépendances :
+		
+		\begin{itemize}
+			\item un ensemble d'attributs $X$ est une clé d'une relation de schéma $R$ par rapport à $F$ si $X$ est un ensemble minimum tel que $F \models X \rightarrow R$
+			\item un ensemble d'attributs $X$ est une super-clé d'une relation de schéma $R$ par rapport à $F$ si $X$ est un ensemble (non nécessairement minimum) tel que $F \models X \rightarrow X$.
+		\end{itemize}
+		
+		
+	\section{Normalisation}
+	
+	La présence de dépendances peut mener à une duplication de l'information, il faut éliminer celles qui sont néfastes.
+		
+	Pour les dépendances fonctionnelles, il faut éviter d'avoir une dépendance non-triviale $Y \rightarrow A$ pour laquelle la partie de tuple $y_1,  \dots , y_k$ puisse apparaître plusieurs fois. Il faut définir des contraintes sur les schémas de relation pour éviter ces répétitions : ce sont les formes normales
+		
+		\subsection{Forme normale de Boyce-Codd (BCNF)}
+		
+		Un schéma de relation est en BCNF si pour toute dépendance non-triviale $X \rightarrow A$, alors $X$ est une super-clé.
+		
+		Le problème de la normalisation est de remplacer un schéma de base de données par un autre équivalent qui est en BCNF. Il faut ainsi qu'avec le nouveau schéma il soit toujours possible de reconstituer la base de données de départ.
+		
+			\subsubsection{Normalisation par décomposition}
+			
+			Un schéma $r$ est remplacé par un ensemble de schémas $R_i$, où $R_i \subset R$. La relation correspondante $r$ est remplacée par les projections $\pi_{R_i} r$.
+			
+			Ce n'est possible que si les relations $\pi_{R_i}r$ contiennent la même information que $r$, ce qui n'est pas toujours le cas.
+			
+			\subsubsection{Décomposition sans perte}
+			
+			Soit un schéma $R$ et $\rho = (R_1, \dots , R_k)$ une décomposition de $R$ telle que $R = R_1 \cap \dots \cap R_k$.
+			
+			\begin{itemize}
+				\item soit une relation $r$ de schéma $R$. La décomposition $\rho$ de $R$ est sans perte pour $r$ si
+				
+				$$r = \pi_{R_1}(r) \Join \dots \Join \pi_{R_k}(r) = m_{\rho}(r)$$
+				
+				\item soit $F$ un ensemble de dépendances sur $R$. La décomposition $\rho$ de $R$ est sans perte par rapport à $F$ si pour toute relation $r$ de schéma $R$ qui satisfait $F$, la décomposition est sans perte pour $r$.
+			\end{itemize}
+		
+		
+			\subsubsection{Propriétés d'une décomposition}
+			
+			\begin{enumerate}
+				\item 
+				$$r \subseteq m_{\rho}(r)$$
+				
+				\dessin{5}
+				
+				\underline{Preuve} : soit un tuple quelconque $t$ de $r$. On a $t[R_1] \in \pi_{R_1}(r), \dots , t[R_k] \in \pi_{R_k}(r)$. Donc, par définition du joint, on a $t \in m_{\rho}(r)$
+				
+				\item 
+				
+				$$\pi_{R_i} (m_{\rho}(r)) = \pi_{R_i}(r)$$
+				
+				\underline{Preuve} : on va démontrer la double-inclusion :
+				
+				\begin{itemize}
+					\item On a $\pi_{R_i} (m_{\rho}(r)) \subseteq \pi_{R_i}(r)$, car par la propriété 1 on a $r \subseteq m_{\rho}(r)$, d'où l'inclusion.
+					\item On peut montrer que $\pi_{R_i}(r) \subseteq \pi_{R_i} (m_{\rho}(r))$
+					
+					On considère un tuple $t_i \in \pi_{R_i}(m_{\rho}(r))$. Il existe donc un tuple $t \in m_{\rho}(r)$ tel que $t_i = t[R_i]$, par définition de $\pi_{R_i}$. 
+					
+					De plus, puisque $t \in m_{\rho}(r)$, il existe un tuple $t' \in r$ tel que $t'[R_i] = t[R_i]$, par définition de $m_{\rho}(r)$.
+					
+					Donc $t'[R_i] = t_i$, et par conséquent $t_i \in \pi_{R_i}(r)$
+				\end{itemize}
+		\end{enumerate}
+		Du coup, il n'est pas possible de distinguer la relation $r$  de la relation $m_{\rho}(r)$ à partie des projections. Autrement dit, si $r \neq m_{\rho}(r)$, il n'est pas possible de reconstituer $r$ à partir de $\pi_{R_i}(r)$.
+		
+			\subsubsection{Critère de décomposition sans pertes}
+			
+			Soit $\rho = (R_1, R_2)$ une décomposition de $R$. Cette décomposition est sans perte par rapport à un ensemble de dépendances fonctionnelles $F$ si
+			
+			$$(R_1 \cap R_2) \rightarrow (R_1 - R_2) \in F^+$$
+			
+			ou
+			
+			$$(R_1 \cap R_2) \rightarrow (R_2 - R_1) \in F^+$$
+			
+			\underline{Preuve} : on va supposer que $(R_1 \cap R_2) \rightarrow (R_1 - R_2) \in F^+$ ou $(R_1 \cap R_2) \rightarrow (R_2 - R_1) \in F^+$ est vrai.
+			
+			On montre que pour toute relation $r$ de schéma $R$, si $r$ satisfait $F$, alors $r = m_{\rho}(r)$.
+			
+			Soit une relation $r$ de schéma $R$ qui satisfait $F$. On sait que $r \subseteq m_{\rho}(r)$, montrons que $m_{\rho}(r) \subseteq r$.
+			
+			Soit un tuple $t \in m_{\rho}(r)$, on veut montrer que $t \in r$. Puisque $t \in m_{\rho}(r)$, il existe des tuples $t_1, t_2 \in r$ tels que $t_1[R_1] = t[R_1]$ et $t_2[R_2] = t[R_2]$.
+			
+			Supposons que $(R_1 \cap R_2) \rightarrow (R_1 - R_2) \in F^+$. Puisque $t_2[R_2] = t[R_2]$, on a $t_2[R_1 \intersection R_2] = t[R_1 \union R_2]$. 
+			
+			Et puisque $(R_1 \cap R_2) \rightarrow (R_1 - R_2)$, alors $t_2[R_1] = t[R_1]$, donc $t[R] = t_2[R]$, et puisque $t_2 \in r$, on a $t \in r$.
+			
+			% Exemple : 28 chapitre 3 (107)
+			
+	
+		\subsection{Algorithme de décomposition en BCNF}
+		
+		Soit un schéma $R$ et un ensemble de dépendances fonctionnelles $F$. L'algorithme procède par décompositions successives pour obtenir une décomposition de $R$ sans perte par rapport à $F$, mais sans garantie de conservation des dépendances.
+		
+		
+		\begin{itemize}
+			\item si $R$ n'est pas en BCNF, soit une dépendance non triviale $X \rightarrow A$ de $F^+$, où $X$ n'est pas une super-clé
+			\item on décompose $R$ en $R_1 = R - A$ et $R_2 = XA$ (sans perte vu le critère ; $R_1 \intersection R_2 = X$ et $R_2 - R_1 = A$)
+			\item on applique l'algorithme $R_1, \pi_{R_1}(F)$ et $\pi_{R_2}(F)$
+		\end{itemize}
+			
+		Puisque les relations deviennent de plus en plus petites, la décomposition doit s'arrêter.
+			
+		% Exemple : 32/53
+		
+		\subsection{La troisième forme normale - 3FN}
+		
+		Il n'est parfois pas préférable de décomposer en BCNF, car cela peut casser des dépendances . Cela peut ne pas poser problème s'il est en troisième forme normale.
+		
+		Exemple : R = (city, street, zip) et $F = \ens{city street \rightarrow zip , zip \rightarrow city}$. Le schéma peut être décomposé en BCF : (street zip) et (city zip). Cependant, la dépendance $city street \rightarrow zip$ n'est pas conservée, et pour retrouver un code postal à partir d'une ville et d'une rue, il faudra effectuer une jointure.
+		
+		On va distinguer deux types d'attributs :
+		
+		\begin{itemize}
+			\item les attributs premiers, qui font partie d'une clé
+			\item les attributs non premiers, qui ne font pas partie d'une clé.
+		\end{itemize}
+		
+		Un schéma de relation est en 3FN si, pour toutes dépendances non-triviales $X \rightarrow A$ avec $A$ non-premier, alors $X$ est une super-clé.
+		
+		La définition est semblable à BCNF, mais on ne tient pas compte des attributs non premiers. L'intérêt est qu'il existe des algorithme capable de décomposer en 3FN tout en gardant les dépendances.
+		
+		\subsection{1FN et 2FN}
+		
+		La première forme normale (1FN) précise que les attributs d'une relation ont une valeur atomique (c'est une hypothèse du modèle relationnel).
+		
+		La deuxième forme normale (2FN) exclut les dépendances non-triviales $X \rightarrow A$, où A est non-premier et où $X$ est un sous-ensemble propre d'une clé. C'est une contrainte moins forte que celle donnée par 3FN, et de fait par BCNF.
+		
+	\section{Les dépendances à valeurs multiples}
+	
+	Dans une relation $R$, on a une dépendance à valeurs multiples entre $X$ et $Y$ ($X, Y \subseteq R$) si les valeurs possibles de $Y$ sont déterminées par $X$, indépendamment du contenu du reste de la relation. Cela s'écrit $X \twoheadrightarrow Y$, X multi-détermine Y.
+	
+	Exemple
+	
+	\dessinS{9}{.5}
+	
+	Plus formellement, une relation $r$ de schéma $R$ satisfait une dépendance à valeurs multiples $X \twoheadrightarrow Y$ si, pour toute paire de tuples $t, s \in r$ tels que $t[X] = s[X]$, il existe deux tuples $u, v \in r$ tels que
+	
+	\begin{enumerate}
+		\item $u[X] = v[X] = t[X] = s[X]$
+		\item $u[Y] = t[Y]$ et $u[R - X - Y] = s[R - X - Y]$
+		\item $v[Y] = s[Y]$ et $v[R - X - Y] = t[R - X - Y]$
+	\end{enumerate}
+	
+	\dessinS{10}{.7}
+
+	Exemple : on a $C \twoheadrightarrow HR$, $C \twoheadrightarrow SG$ et $HR \twoheadrightarrow SG$, mais pas $ C \twoheadrightarrow H$ et $C \twoheadrightarrow R$.
+	
+	\dessinS{11}{.5}
+	
+	Au niveau de dépendances multiples triviales, quelques exemples :
+	
+	\begin{enumerate}
+		\item pour $R(A, B)$, on a toujours $A \twoheadrightarrow B$ (toujours satisfaite)
+		\item pour $R(A, B, C)$, on a $A \twoheadrightarrow B$ selon les cas.
+		
+		\dessinS{12}{.5}
+		
+		\item avec $R(A, B, C)$ et $A \rightarrow B$. La dépendance à valeurs multiples $A \twoheadrightarrow B$ est toujours satisfaite lorsque $A \rightarrow B$ est satisfait.
+		
+		En effet, soient $t, s \in R$ tels que $t[A] = s[A]$. Vu que $t[B] = s[B]$, il existe bien des tuples $u, v \in r$ tels que $u[A] = v[A] = t[A] = s[A]$, $u[B] = t[B]$, $u[C] = s[C]$, $v[B] = s[B]$ et $v[C] = t[C]$. Ces tuples sont respectivement $s$ et $t$.
+	\end{enumerate}
+	
+	
+		\subsection{Propriétés des dépendances à valeurs multiples}
+		
+		
+		\begin{itemize}
+			\item réflexivité : si $Y \subseteq X$, alors $X \twoheadrightarrow Y$
+			\item complémentation : si $X \twoheadrightarrow Y$, alors $X \twoheadrightarrow (R - XY )$
+			\item reproduction : si $X \rightarrow Y$, alors $X \twoheadrightarrow Y$
+			\item union : si $X \twoheadrightarrow Y$ et $X \twoheadrightarrow Z$, alors $X \twoheadrightarrow XZ$
+			\item intersection : si $X \twoheadrightarrow Y$ et $X \twoheadrightarrow Z$, alors $X \twoheadrightarrow Y \intersection Z$
+			\item différence : si $X \twoheadrightarrow Y$ et $X \twoheadrightarrow Z$, alors $X \twoheadrightarrow Y \\ Z$
+		\end{itemize}
+		
+		Les règles de décomposition et de transitivité ne sont pas valides pour les dépendances à valeurs multiples. Par exemple, pour le schéma CTHRSG, on a $C \twoheadrightarrow HR$ et $HR \twoheadrightarrow H$, mais pas $C \twoheadrightarrow H$.
+		
+		De plus, comme pour les dépendances fonctionnelles, il est possible de déterminer si une DVM est une conséquence logique d'un ensemble de dépendances.
+		
+		
+		\subsection{Décomposition sans perte}
+		
+		Pour toute relation $r$ de schéma $R$, $r$ satisfait la DVM $X \twoheadrightarrow Y$ si et seulement si la décomposition $\rho = (XY, X(R - XY))$ est sans perte pour $r$, c'est-à-dire $r = m_\rho (r)$
+		
+		\underline{Preuve} : soit $r$ une relation quelconque de schéma $R$.
+		
+		\begin{itemize}
+			\item[$\Leftarrow$] supposons que la décomposition est sans perte pour $r$, c'est-à-dire
+			
+			$$r = \pi_{XY}(r) \Join \pi_{XZ}(r)$$
+			
+			avec $Z = R - XY$. Considérons deux tuples $t, s \in r$ tels que $t[X] = s[X]$. On a $t[XY] \in \pi_{XY}(r)$ et $s[XZ] \in \pi_{XZ}(r)$.
+			
+			Donc les tuples $u, v$ tels que $u[X] = v[X] = t[X] = s[X]$, $u[Y] = t[Y]$, $u[Z] = s[Z]$, $v[Y] = s[Y]$ et $v[Z] = t[Z]$ appartiennent à $\pi_{XY}(r) \Join \pi_{XZ}(r) = r$.
+			
+			\item[$\Rightarrow$] supposons que $r$ satisfait la dépendance $X \twoheadrightarrow  Y$ et montrons que le joint est sans perte, c'est-à-dire que si $u \in \pi_{XY}(r) \Join \pi_{XZ}(r)$, alors $u \in r$.
+			
+			Si $u \in \pi_{XY}(r) \Join \pi_{XZ}(r)$, alors $u \in r$, il existe $t, s \in r$ tels que $t[XY] = u[XY]$ et $s[XY] = y[XZ]$, ou encore $u[X] = t[X] = s[X]$, $u[Y] = t[Y]$, $u[Z] = s[Z]$.
+			
+			
+			Puisque $r$ satisfait $X \twoheadrightarrow Y$, le tuple $u$ doit être aussi dans $r$ (par définition des DVM).
+			
+			\dessinS{13}{.7}
+		\end{itemize}
+	
+		La propriété peut aussi s'écrire comme suit : soit $R$ un schéma de relation et $\rho = (R_1, R_2)$ une décomposition de $R$.
+		
+		 Pour toute relation $r$ de schéma $R$, $r$ satisfait la DVM $(R_1 \union R_2) \twoheadrightarrow (R_1 - R_2)$ (ou $(R_1 \union R_2) \twoheadrightarrow (R_2 - R_1))$ par complémentation) si et seulement si la décomposition $(R_1, R_2)$  de $R$ est sans perte pour $r$, c'est-à-dire $r = m_\rho (r)$.
+		 
+		 Il y a une équivalence entre la notion de dépendance à valeurs multiples et celle de décomposition sans perte.
+		 
+		 Pour les dépendances fonctionnelles, la présence de la dépendance fonctionnelle permet la décomposition sans perte, mais une relation $r$ peut être décomposable sans perte sans qu'elle ne satisfasse de décomposition fonctionnelle.
+		 
+		 
+		 \subsection{Critère de décomposition sans perte}
+		 
+		 Soit $\rho = (R_1, R_2)$ une décomposition de $R$. Cette dépendance est sans perte par rapport à un ensemble de dépendances (fonctionnelles et multiples) $D$ si et seulement si
+		 
+		 $$(R_1 \union R_2) \twoheadrightarrow (R_1 - R_2) \in D^+$$
+		 
+		 ou, par complémentation,
+		 
+		 $$(R_1 \union R_2) \twoheadrightarrow (R_2 - R_1) \in D^+$$
+		 
+		 \underline{Preuve} : c'est la conséquence directe de la propriété établissant l'équivalence entre la satisfaction d'une DVM par une relation et la décomposition sans perte pour cette relation.
+		 
+		 
+		 \subsection{Quatrième forme normale}
+		 
+		 Il peut être gênant, pour une DVM $X \twoheadrightarrow Y$, si l'association entre les valeurs de $X$ et celles de $Y$ est répétée, c'est-à-dire apparaît pour plusieurs valeurs des autres attributs $Z = R - XY$ de la relation. Cela peut se produire, sauf si
+		 
+		 \begin{itemize}
+		 	\item $Z = \emptyset$, $X \twoheadrightarrow Y$ est triviale, ou
+		 	\item $Y \subset X$, $X \twoheadrightarrow Y$ est triviale, ou
+		 	\item $X \rightarrow R$, $X$ est une super-clé.
+		 \end{itemize}
+		 
+		 On peut définir la quatrième forme normale : un schéma est en 4FN si, pour toute dépendance $X \twoheadrightarrow Y$,
+		 
+		 \begin{itemize}
+		 	\item soit $Y \subseteq X$
+		 	\item soit $XY = R$
+		 	\item soit $X$ est une super-clé de $R$.
+		 \end{itemize}
+		 
+		 La 4FN implique la BCNF. En effet,
+		 
+		 \begin{itemize}
+		 	\item une dépendance $X \rightarrow Y$ est aussi une dépendance $X \twoheadrightarrow Y$
+		 	\item si $X \subset X$, la dépendance $X \rightarrow Y$ est triviale
+		 	\item si $XY = R$, alors $X \rightarrow R$ et $X$ est une super-clé.
+		 \end{itemize}
+		 
+		 Pour obtenir la 4FN, on peut procéder par décomposition comme pour la BCNF.
+		 
+		 \subsection{Algorithme de décomposition en 4FN}
+		 
+		 Soit un schéma $R$ et un ensemble de dépendances (fonctionnelles et à valeurs multiples) $D$.
+		 
+		 L'algorithme procède par décomposition successives pour obtenir une décomposition de $R$ sans perte par rapport à $D$, mais sans garnatie de conservation des dépendances.
+		 
+		 \begin{itemize}
+		 	\item si $R$ n'est pas en 4FN, soit une dépendance $X \twoheadrightarrow Y$ de $D^+$ telle que $Y \neq \emptyset$, $Y \nsubseteq X$, $XY \subset R$ et $X$ n'est pas une super-clé
+		 	
+		 	On peut supposer que $X \intersection Y = \emptyset$, puisque $X \twoheadrightarrow (Y - X)$ est impliqué par $X \twoheadrightarrow Y$
+		 	\item on décompose $R$ en $R_1 = XY$ et $R_2 = X(R-  XY)$, ce qui est sans perte vu le critère
+		 	\item on applique l'algorithme à $R_1$, $\pi_{R_1}(D)$ et $R_2$, $\pi_{R_2}(D)$.
+		 \end{itemize}
+		 
+		 Puisque les relations deviennent de plus en plus petites, la décomposition doit s'arrêter.
+		 
+		 \dessin{14}
+		 
+		 
+		 \subsection{Autres types de dépendances}
+		 
+		 On a aussi les dépendances "joint" ; les DVN caractérisent les cas où une décomposition en 2 relations est sans perte. Il est parfois possible de décomposer une relation sans perte en trois sous-schémas sans qu'il y ait de décomposition en deux sous-schémas qui sont sans perte.
+		 
+		 On généralise donc la notion de DVM en la notion de dépendance-joint.
+		 
+		 Une relation $r$ de schéma $R$ satisfait la dépendance-joint $\star [R_1, \dots , R_k]$ si $r = \pi_{R_1}(r) \Join \pi_{R_2} (r) \Join \dots \Join \pi_{R_k}(r)$
+		 
+		 Cela conduit à la définition de 5FN, "project-join normal form".
+		 
+		 \subsection{La cinquième forme normale - 5FN}
+		 
+		 Une relation $r$ de schéma $R$ est en 5FN par rapport à un ensemble de dépendances fonctionnelles et joint $F$ si, pour toute dépendance joint $\star[R_1, \dots , R_k]$ impliquée par $F$,
+		 
+		 \begin{itemize}
+		 	\item soit elle est triviale (vraie de toute relation de schéma $R$)
+		 	\item soit chaque $R_i$ est une super-clé de $R$
+		 \end{itemize}

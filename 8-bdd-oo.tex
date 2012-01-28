@@ -1,0 +1,90 @@
+\chapter{Bases de données orientées objet}
+
+Certaines applications ont des besoins nouveaux, notamment
+
+\begin{itemize}
+	\item des structures d'objets plus complexes
+	\item des transactions de durée plus longue
+	\item de nouveaux types de données
+\end{itemize}
+
+Les BDD OO sont une tentative de réponse à ces nouveaux besoins. Une caractéristique importante est qu'elles donnent au concepteur de la BDD de spécifier
+
+\begin{itemize}
+	\item la structure d'objets complexes
+	\item les opérations à appliquer à ces objets
+\end{itemize}
+
+Il y a actuellement plusieurs prototypes et quelques produits commerciaux de BDD OO.
+
+Ces systèmes reprennent les concepts adoptés par la programmation OO, avec les spécificités des BDD (persistance des données, transactions, etc). Il permettent donc de décrire des objets complexes dans une base de données, qui sont caractérisés par une ensemble structuré de valeurs (et pas une seule). On peut faire référence à un objet complexe, par exemple si le domaine d'un attribut de relation est un ensemble d'objets complexes, il faut que les objets aient un identificateur.
+
+	\section{Objets complexes}
+	
+	On dénode $\ens{D_i}$ un ensemble fini de domaines, $A$ un ensemble dénombrable d'attributs et $ID$ un ensemble dénombrable d'identificateurs.
+	
+	On définit l'ensemble des valeurs $V$ subdivisé en
+	
+	\begin{itemize}
+		\item valeurs de base, qui sont soit \textit{nil} (valeur non définie) soit des éléments $d \in D$
+		\item valeurs-ensembles : des sous-ensembles de $ID$
+		\item valeurs-tuples : des fonctions (partielles) de $A$ vers $ID$
+	\end{itemize}
+	
+	Un objet est une paire $(id, v)$, où $id \in ID$ est l'identificateur de l'objet et $v \in V$ la valeur de l'objet.
+	
+	Dans tout ensemble d'objets considérés, deux objets distincts ne peuvent avoir le même identificateur.
+	
+		\subsection{Types d'objets}
+		
+		On distingue les objets selon leur type (schéma, structure) :
+		
+		\begin{itemize}
+			\item les objets de base : ce sont des paires $(id, v)$ où $v$ est une valeur de base. Le type d'un objet de base $(id, v)$ (où $v \in D_i$) est le domaine $D_i$. Le type de \textit{nil} est NIL.
+			\item les objets-ensembles : ce sont des paires $(id, v)$ où $v$ est une valeur-ensemble. Le type d'un objet-ensemble $(id, v)$ est $2T$, où $T$ est l'union des types des objets $(id', v')$ tels que $id' \in v$
+			\item les objets-tuples : ce sont les paires $(id, v)$ où $v$ est une valeur-tuple. Le type d'un objet tuple $(id, v)$ est $\ens{(a_i, T_i)}$ tel que $v(a_i)$ est défini et tel que $T_i$ est le type de l'objet $(id', v')$ pour lequel $id' = v(a_i)$.
+		\end{itemize}
+		
+		Exemple.
+		
+		\dessinS{15}{.5}
+		
+		\subsection{Manipulation et encapsulation}
+		
+		Les méthodes sont des procédures de manipulation d'objets. Principe d'encapsulation : seules les méthodes associées à un objet peuvent être utilisées pour le manipuler.
+		
+		Une classe est un ensemble d'objets de même type, elle correspond à un ensemble d'entités. Elle peut être elle-même un objet.
+		
+		Les objets de certaines classes peuvent être des particularisation d'objets d'autres classes : c'est l'héritage.
+		
+		Dans un langage de programmation classique, le lien entre un appel de procédure et le texte du programme correspondant se fait à la compilation. En OO, cela se fait au moment de l'exécution : c'est la liaison tardive (late binding). Il n'est donc pas nécessaire de connaître le type d'un objet dans un programme qui le manipule. On peut donc écrire des programmes génériques qui peuvent s'appliquer à différentes classe d'objets.
+		
+		En plus de ces fonctionnalités, les bases de données OO doivent avoir les possibilités suivantes :
+		
+		\begin{itemize}
+			\item complétude au niveau du calcul ; toutes les requêtes calculables doivent être expressibles
+			\item le système doit être extensible, soit permettre la définition de nouvelles classes
+			\item traiter des grandes quantités de données
+			\item gérer des transactions (parallélisme, récupération après erreur)
+			\item possibilité de poser aisément des requêtes simples
+		\end{itemize}
+		
+		\subsection{Langage d'interrogation}
+		
+		Il n'y a pas de solution largement répandue. On trouve des langages de programmation orienté-objets et des langages spécifiques permettant l'interrogation directe de la base de données de façon plus déclarative.
+		
+		\subsection{Le modèle objet-relationnel}
+		
+		Le modèle objet permet de traiter des objets complexes et donne de la flexibilité au niveau des types de données possibles. Le modèle relationnel est associé à un langage d'interrogation de haut niveau et permet l'exécution efficace de requêtes. Combiner les deux permettrait d'avoir les avantages des deux.
+		
+		Le modèle relationnel-objet est vu comme le modèle relationnel avec des extensions orientées-objets. On a les principes suivants :
+		
+		\begin{itemize}
+			\item la possibilité de définir des types (UTD : user defined types), autrement dit définir une classe et des méthodes, avec une hiérarchisation si nécessaire
+			\item l'utilisation des références  REF, qui identifient les objets, mais qui restent visibles
+			\item la définition de tables dont les lignes sont des objets plutôt que des tuples. La définition de valeurs "ensemble" pour un attribut est possible
+			\item la possibilité d'avoir des relations comme valeurs pour certains attributs ; on parle de nested tables.
+		\end{itemize}
+		
+		Le langage SQL a été étendu pour permettre la définition et l'interrogation de BDD objet-relationnel. Il y a utilisation de méthodes sur les types définis, on peut suivre les références (DEREF) et l'interrogation des tables imbriquées est possibles avec THE(), qui permet de traiter une table imbriquée comme une table ordinaire.
+		

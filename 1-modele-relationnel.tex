@@ -1,0 +1,174 @@
+\chapter{Modèle relationnel}
+
+On n'utilise qu'un seul type de structure pour représenter les données : la relation. On a ainsi des relations entre des ensembles de valeurs simples, plutôt qu'entre ensembles d'entités.
+
+Intuitivement, on peut représenter le modèle comme une table, où chaque ligne est un tuple et représente une relation entre les valeurs se trouvant dans chaque colonne. Le nom des différentes colonnes sont les attributs de la relation.
+
+
+	\section{Définitions}
+
+	Soit un certain nombre d'identificateurs que l'on appelle attributs.	
+	
+	\begin{itemize}
+		\item le schéma d'une relation est un ensemble fini d'attributs (ex : $\ens{A_1, A_2}$, $\ens{A_1, A_3}$).
+		\item le domaine d'un attribut est l'ensemble de ses valeurs possibles et est noté $dom(A_i) = D_i$. En général, les valeurs sont atomiques (relationnel, 1ère forme normale)
+		\item le domaine d'un schéma de relation est l'union des domaines de ses attributs et est noté $dom(R) = dom(A_1) \cup dom(A_2) \cup dom(A_3)$.
+		\item pour un schéma de relation $R$, un tuple est une fonction $t : R \rightarrow dom(R)$ telle que $\forall A \in R : t(A) \in dom(A)$
+		\item pour un schéma de relation, une relation est un ensemble fini de tuples, donc un type n'apparaît qu'une seule fois dans une relation.
+		\item un schéma de base de données est un ensemble fini de schémas de relations
+		\item une base de donnée est un ensemble fini de relations.
+	\end{itemize}
+	
+	On peut se passer d'attributs et définir une relation comme un sous-ensemble du produit cartésien de domaines pris dans un ordre donné. Il y a des inconvénients :
+	
+	\begin{itemize}
+		\item l'ordre des composantes des tuples devient important, puisque la seule façon de les distinguer est leur position
+		\item l'ordre est aussi important dans la description du schéma
+	\end{itemize}
+	
+	
+	\section{Clés}
+	
+	Pour un schéma de relation, une superclé est un ensemble d'attributs qui identifie de manière unique un type de la relation ; il ne peut y avoir dans la relation deux tuples distincts qui ont les mêmes valeurs pour la superclé.
+	
+	Une clé est une superclé minimale, c'est-à-dire une superclé dont on ne peut enlever aucun attribut sans lui faire perdre son status de superclé.
+	
+	 \section{Modèle entité-relation vers modèle relationnel}
+	 
+	 	\subsection{Entités non faibles}
+	 Pour un ensemble d'entités E non faibles peut être représenté par la relation dont les attributs sont les attributs simples de E. Les attributs composites sont remplacés par leurs composantes.
+	 
+	 	\subsection{Entités faibles}
+	 Pour un ensemble d'entités E faibles, on peut le représenter par la relation T dont les attributs sont
+	 
+	 \begin{itemize}
+	 	\item les attributs de l'ensemble d'entités E, plus
+	 	\item les attributs de la clé de chacun des ensembles d'entités participant aux relations identifiantes de E
+	 \end{itemize}
+	 
+	 La clé de T est la clé  de E ; le rôle d'un ensemble d'entités est représenté par la clé de cet ensemble d'éléments.
+	 
+	 	\subsection{Relation entre plusieurs ensembles}
+	 Une relation R entre les ensembles $E_1 , \dots E_k$ est représentée par une relation $T$ dont les attributs sont
+	 
+	 \begin{itemize}
+	 	\item les attributs de R, plus
+	 	\item les attributs de la clé de chacun des ensembles participant à la relation.
+	 \end{itemize}
+	  La clé de T est la clé de R.
+	 
+	 	\subsection{Rôle(1,1)}
+	 Cas particulier : ensemble d'entités dont le rôle est borné par (1, 1). Soient $E_1$ et $E_2$ représentés par $T_1$ et $T_2$ et une relation $R$. Au lieu de représenter $R$, on peut ajouter à $T_1$
+	 
+	 \begin{itemize}
+	 	\item les attributs de la clé de $T_2$
+	 	\item les attributs de la relation $R$.
+	 \end{itemize}
+	 
+	 
+	 	\subsection{Attribut multivalué}
+	Pour un attribut multivalué $A$ d'un ensemble d'entités $E$ (représenté par $T$) peut être représenté par une nouvelle relation $T_A$ dont les attributs sont
+	
+	\begin{itemize}
+		\item les attributs de la clé de la relation $T$ correspondant à $E$
+		\item un attribut correspondant à $A$ ; si $A$ est composite, on prend ses composantes
+	\end{itemize}
+	 
+	 	\subsection{Spécialisation/généralisation}
+	 	
+		Soit un ensemble $E$ spécialisé (ISA) par $E_i$.
+		
+		E est représenté par une relation $T_E$ dont les attributs de E. La clé de $T_E$ est la clé de $E$.
+		
+		$E_i$ est représenté par une relation $T_{E_i}$ dont les attributs sont
+		
+		\begin{itemize}	
+			\item les attributs de $E_i$ plus
+			\item les attributs de la clé de $T_E$
+		\end{itemize}
+		
+		La clé de $T_{E_i}$ est la clé de $E$.
+		
+		
+	\section{Algèbre relationnelle}
+	
+	Il s'agit d'un ensemble d'opérations qui, à partir de relations, permettent de construire de nouvelles relations.
+	
+	
+	
+		\subsection{Opérations booléennes}
+		
+		Soient les relations $r$ de schéma $R$ et $s$ de schéma $S$.
+		
+			\subsubsection{Union}
+			
+			Si $R = S$, l'union $r \cup s$ est la relation de schéma $R$ (ou $S$) constituée de l'ensemble des tuples qui appartiennent à $r$ ou à $s$ :
+			
+			$$r \cup s = \ens{t \in r} \cup \ens{t \in s}$$
+			
+			\subsubsection{Différence}
+			
+			Si $R = S$, la différente $r - s$ est la relation de schéma $R$ (ou $S$ constituée des tuples appartenant à $r$ mais pas à $s$.
+			
+			$$r - s = \ens{t \in r} - \ens{t \in s}$$
+			
+			\subsubsection{Intersection}
+			
+			$$r \cap s = r - (r - s) = \ens{t : t \in r \text{ et } t \in s}$$
+			
+		\subsection{Projection}
+		
+		Soit une relation $r$ de schéma $R$ et $S \subseteq R$. La projection de $r$ sur $S$ est la relation de schéma $S$ obtenue à partir de $r$ en éliminant les attributs de $R$ qui ne sont pas dans $S$ :
+		
+		$$\pi_S(r) = \ens{t(S) \vert t \in r} = \ens{t(S) \vert \exists t' \in r : t'(S) = t(S)}$$
+		
+		 \subsection{Sélection}
+		 
+		 Soit un schéma de relation $R = \ens{A_1 , \dots , A_k}$. Une condition de type $R$ est une combinaison booléenne de formules atomiques $A_i \theta A_j$ ou $a \theta A_i$ ou $A_i \theta a$, où $\theta$ est une relation sur le domaine de $A_i$ ($A_j$) et $a$ une constante de ce domaine.
+		 
+		 Pour une relation $r$ de schéma $R$ et une fonction $F$ de type $R$, la sélection $\sigma_F(r)$ est la relation de schéma $R$ constituée de l'ensemble des tuples de $r$ qui satisfont la condition $F$ :
+		 
+		 $$\sigma_F(r) = \ens{ t \in r \vert F[A_i \leftarrow t(A_i)] = true }$$
+		 
+		 \subsection{Produit cartésien}
+		 
+		 Soit $r$ de schéma $R$ et $s$ de schéma $R$. Si $R \cap S = \emptyset$, le produit cartésien $r \times s$ est la relation de schéma $R \cup S$ obtenue en combinant les tuples de $r$ et de $s$ de toutes les manières possibles :
+		 
+		 $$r \times s = \ens{t \vert (\exists t' \in r)(\exists t'' \in s) (t(R) = t'\wedge t(S) = t'')}$$
+		 
+		 \subsection{Jointure/joint}
+		 
+		 Si $R \cap S \neq \emptyset$, $r \Join s$ est une relation de schéma $R \cup S$ :
+		 
+		 $$r \Join s = \ens{ t \vert (\exists t' \in r) (\exists t'' \in s ) (t(R) = t' \wedge t(S) = t'') }$$
+		
+		Chaque tuple de $r \Join s$ correspond à un tuple $t'$ de $r$ et un tuple $t''$ de $s$ qui ont des valeurs identiques pour les attributs communs à $R$ et à $S$ (dans $R \cap S$).	
+		
+		\subsection{Joint conditionnel}
+		
+		Soient les relations $r(R)$ et $s(S)$ et soient les attributs $A_R \in R$ et $A_S \in S$. On définit le joint conditionnel par
+		
+		$$r \underset{A_R \theta A_S}{\Join} s = \sigma_{A_R \theta A_S} (r \times s)$$
+		
+		
+		\subsection{Quotient}
+		
+		Soient $r(R)$ et $s(S)$, avec $S \subseteq R$. On veut trouver les tuples $t$ sur $R - S$ tels que pour chaque tuple $t_s \in s$ on a $t_r \in r$.
+		
+		$$r \div s = \ens{t \vert (\forall t_s \in s)(\exists t_r \in r) (t_s(S) = t_s \wedge t_r(R - S) = t)} $$
+		
+		$r \div s$ est le sous-ensemble $r'$ maximum de $\pi_{R - S}(s)$ tel que $(r' \times s ) \subseteq r$.
+		
+		On peut exprimer cet opérateur ainsi :
+		
+		$$ r \div s = \pi_{R - S} (r) - \pi_{R - S} ( (\pi_{R - S}(r) \times s ) - r ) $$
+		
+		\subsection{Relations constantes}
+		
+		On va admettre les relations constantes, dont les tuples ne dépendent pas de l'état de la base de données.
+		
+		\subsection{Changement de nom}
+		
+		Peut être utile lorsqu'on veut appliquer des opérations lorsque les noms des attributs ne correspondent pas, où quand il y a des attributs identiques et qu'on ne veut pas les voir dans le résultat.
+		
+		$$\delta_{A \leftarrow B}(r) = \ens{ t \vert (\exists t' \in r)(t(B) = t'(A) \wedge (\forall A_i \neq A)(t(A_i) = t'(A_i))) }$$

@@ -1,0 +1,158 @@
+\chapter{L'intégration de données}
+
+Le problème de l'intégration de données est de permettre un accès cohérent à des données d'origine, de structuration et de représentation différentes.
+
+Deux techniques existent :
+
+\begin{itemize}
+	\item les entrepôts de données (data warehouses), qui regroupent des données pour les analyser statistiquement et les exploiter en gestion stratégique
+	\item le langage XML (eXtended Markup Language), qui est un cadre générique de représentation des données (semi-)structurées
+\end{itemize}
+
+	\section{Entrepôts de données}
+	
+	Les informations d'une BDD opérationnelle (exploitées pour la gestion quotidienne) peuvent être aussi utiles pour une gestion plus "stratégique". Le type de requêtes nécessite un traitement lourd (donc avec un impact sur les performances de la BDD opérationnelle), pas toujours facilement expressible en SQL, et qui implique parfois des données se trouvent dans des BDD distinctes.
+	
+	On effectue donc ce type de traitement dans un entrepôt de données,  une BDD spécialement conçue pour cette utilisation.
+	
+	Un entrepôt de données est une base de données
+	
+	\begin{itemize}
+		\item consolidant les données de bases de données opérationnelles
+		\item utilisée en consultation et mis à jour périodiquement
+		\item organisée pour permettre le traitement de requêtes analytiques (OLAP) plutôt que transactionnelles (OLTP).
+	\end{itemize}
+	
+	On a
+	
+	\begin{itemize}
+		\item OLTP (on-line transaction processing) : petites transactions consistant en une recherche d'informations, et souvent une mise à jour.
+		\item OLAP (online analytical processing) : grosses transactions impliquant une fraction importante des données (par exemple un calcul statistique)
+	\end{itemize}
+	
+	
+		\subsection{BDD opérationnelle vers l'entrepôt de données}
+		
+		Les informations d'un entrepôt de données sont issues de BDD opérationnelles, mais leur schéma est en général différent, et les mises à jour ne sont que périodiques.
+		
+		On appelle \textit{extraction} le processus par lequel les données opérationnelles sont transférées vers l'entrepôt. Le schéma de l'entrepôt est considéré comme une vue sur les données opérationnelles, elle est dite matérialisée vu que les relations correspondant à la vue sont effectivement créées. 
+		
+		Il est utile (mais difficile) de pouvoir mettre à jour les données de l'entrepôt sans devoir régénérer toute son entièreté : c'est une mise à jour incrémentale.
+	
+		\subsection{Organisation d'un entrepôt de données}
+		
+		On utilise des schémas en étoile  ; on distingue deux types de données :
+		
+		\begin{itemize}
+			\item les faits, une grosse accumulation de données reprenant des faits simples
+			\item les données dimensionnelles, en quantité réduite et souvent statiques, qui précisent des informations sur les éléments apparaissant dans les faits.
+		\end{itemize}
+	
+		Exemple : on a les faits dans une relation \texttt{vente(bar, bière, consommateur, date, heure, prix)} et les données dimensionnelles \texttt{bars(bar, adresse, gérant)}, \texttt{bieres(biere, taux\_alcool, fabriquant)} et \texttt{consommateurs(consommateur, adresse, date\_naissance)}
+		
+		On distingue deux types d'attributs dans la table des faits :
+		
+		\begin{itemize}
+			\item les attributs de dimension, les clés des relations dimensionnelles
+			\item les attributs dépendants, les valeurs déterminées par les attributs de dimension
+		\end{itemize}
+		
+		Par exemple, dans la relation \texttt{vente}, l'attribut \texttt{prix} est un attribut dépendant déterminé par les attributs \texttt{bar, biere, consommateur, date, heure}.
+	
+	
+		\subsection{Extraction d'informations}
+		
+		Il y a deux approches :
+		
+		\begin{itemize}
+			\item ROLAP (relational on-line analytical processing) : expression des requêtes en SQL
+			\item MOLAP (multidimensional on-line analytical processing) : on voit l'entrepôt comme une BDD multidimensionnelles, dont le modèle est un cube à $n$-dimensions. Il y a une dimension du cube par attribut dimensionnel, et les éléments du cube sont les valeurs des attributs dépendants.
+		\end{itemize}
+		
+			\subsubsection{L'approche ROLAP}
+			
+			Une requête ROLAP est généralement exprimée ainsi :
+			
+			\begin{enumerate}
+				\item calcul du joint de la table des faits et des relations dimensionnelles
+				\item sélection des tuples en fonction des données dimensionnelles
+				\item groupement de ces données suivant certains dimensions
+				\item calcul d'une valeur agrégée
+			\end{enumerate}
+			
+			Exemple :
+			
+			\dessin{16}
+			
+			Les requêtes ROLAP peuvent être coûteuses. Il y a des techniques pour les accélérer :
+			
+			\begin{itemize}
+				\item les index "bitmaps" : on accélère la sélection suivant les dimensions en créant pour chaque valeurs des clés de dimension un vecteur de bits indiquant quels tuples de la table des faits ont cette valeur.
+				\item les vues matérialisées : précalcul de certains joints
+			\end{itemize}
+			
+			
+			\subsubsection{L'approche MOLAP}
+			
+			Les clés des tables de dimension sont considérées comme les axes d'un hypercube. Les attributs dépendants apparaissent comme les points du cube. Ce dernier peut aussi contenir des valeurs agrégées suivant les axes, plans, hyperplans, etc.
+			
+			Pour exploiter un cube de données, on a les opérations suivantes :
+			
+			\begin{itemize}
+				\item roll-up : sélectionner et agréger suivant certains axes (ex : grouper les bars par région). On parle de slicing (sélectionner suivant une valeur) et de dicing (sélectionner selon un domaine de valeurs)
+				\item drill-down : désagréger certains groupements (ex : grouper les bières par tuax d'alcool et les séparer par fabriquant)
+				\item éliminer certains dimensions (projeter) en remplaçant les points du cube par les agrégats correspondants (pivoting).
+			\end{itemize}	
+				
+		\subsection{La fouille des données (data mining)}
+		
+		L'idée est de trouver des informations dans un entrepôt en allant plus loin qu'une requête simple. Ex : pour une BDD de ventes \texttt{ventes(id\_panier, produit)}, on cherche les éléments apparaissant souvent simultanément.
+		
+		Une approche naïve est de fixer un seuil de support (pourcentage de paniers dans lesquels une paire de produits apparaît) pour sélectionner les paires intéressantes. On calcule pour cela le joint de la relation \texttt{ventes} avec elle-même. Puis on groupe par paires de produits et on sélectionne sur la fréquence.
+		
+		Le coût en performances est énorme. Pour y remédier, on peut sélectionner a priori des articles isolés vendus fréquemment. Seuls ceux là peuvent apparaître dans les paires fréquentes.
+		
+		
+	\section{Le langage XML}
+	
+	L'origine se trouve dans les langages d'annotation de textes comme HTML. SGML (Standard Generalized Markup Language) et XML (une révision simplifiée et conçue pour le web) permettent d'utiliser un ensemble définissable d'annotations.
+	
+	Contrairement à une BDD où le schéma est fixé et conservé séparément des données, en XML, le schéma est incorporé dans les données. Cela permet beaucoup de flexibilité ; le schéma et le contenu d'une BDD peuvent être représentés facilement en XML, indépendamment du type de BDD utilisé.
+	
+	Le XML permet donc l'exportation d'information d'une BDD. Il permet aussi d'extraire des informations d'une BDD et les fournir à une application.
+	
+		\subsection{Structure d'un document}
+		
+		\dessinS{17}{.55}
+		
+		La première ligne déclare qu'il s'agit d'un document XML et donne le codage des caractères. Le reste sont des éléments compris entre une annotation (tag) d'ouverture et de fermeture et sous forme d'arbre (un élément pouvant en inclure d'autres).
+		
+		Une annotation peut avoir des attributs. Quand il s'agit de données, il est préférable d'utiliser l'élément, tandis que l'attribut est naturel pour des méta-données (informations au sujet des données).
+		
+		Les annotations n'ont pas de signification par elles-mêmes, mais elles peuvent être interprétées par une application. Chaque document comporte néanmoins un élément de départ, appelé la racine (root element).
+		
+		\subsection{Définition de types de documents}
+
+		Un document XML est bien formé s'il est syntaxiquement correct. Il est valide s'il est conforme à une définition de type de document (DTD - data type definition).  Cette définition se trouve dans l'entête, ou dans un fichier auxiliaire mentionné dans l'entête.
+		
+		\dessinS{18}{.55}
+		
+		La définition spécifie les éléments qui peuvent apparaître dans le document et les annotations correspondantes. \texttt{\#PCDATA} indique qu'un élément est constitué de texte (Parsed Character Data). Le "parsed" indique que le texte sera analysé pour y détecter des annotations éventuelles. \texttt{\#CDATA} indiquerait que le texte ne doit pas être analysé.
+		
+		Lorsqu'on écrit la liste des constituants d'un élément, on peut préciser la répétition de certains éléments : ? (zéro ou une fois), * (zéro fois ou plus), + (une fois au plus). On a par exemple \texttt{<!ELEMENT note(message+)>}.
+		
+		Un choix est indiqué par une barre verticale, par exemple \texttt{<!ELEMENT note(a, de,header,(message|texte))>}.
+		
+		On peut aussi préciser les attributs des différents éléments et leur nature, par exemple \texttt{<!ATTLIST note date type CDATA \#REQUIRED>}.
+		
+		Le dernier élément est la valeur par défaut ; \texttt{\#REQUIRED} indique qu'il n'y en a pas et qu'une valeur doit figurer dans le document pour l'attribut.
+		
+		Différents types sont possibles pour les attributs, certains sont particuliers :
+		
+		\begin{itemize}
+			\item ID : identificateur unique
+			\item IDREF : une référence à un identificateur d'élément
+			\item IRREFS : liste d'indicateurs d'éléments
+		\end{itemize}
+		
+		Cela permet de faire référence au même élément à plusieurs endroits d'un document.

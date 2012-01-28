@@ -1,0 +1,181 @@
+\chapter{Gestion des transactions}
+
+Pour maintenir la cohérence d'une base de données, on utilise les transactions : ce sont des suites d'opérations (lectures-écritures) effectuées sur une base de données.
+
+Le concept s'utilise comme suit :
+
+\begin{enumerate}
+	\item l'interaction avec la BDD se fait uniquement avec des transactions
+	\item le système de BDD gère les transactions de manière atomique ; si une transaction est exécutée, elle doit l'être entièrement et de façon indivisible en cas de parallélisme.
+\end{enumerate}
+
+	On peut définir les transactions dites ACID : 
+	
+	\begin{itemize}
+		\item Atomicity : l'exécution des transactions doit être atomique
+		\item Consistency : l'exécution des transactions doit respecter les contraintes d'intégrité définies par la BDD
+		\item Isolation : il n'y a pas d'interaction entre transactions exécutées en parallèle
+		\item Durability : une fois la transaction effectuée, le résultat ne peut être perdu
+	\end{itemize}
+	
+	\section{Ordonnancement}
+	
+	On définit un ordonnancement (schedule) d'un ensemble de transactions $\ens{T_1, \dots , T_k}$ est un ordre d'exécution des opérations $a_i^j$ des transactions $T_i$.
+	
+	
+	Un ordonnancement est séquentiel (serial) lorsqu'il existe une permutation $\pi$ de $\ens{1 , \dots , k}$ telle que l'ordonnancement est $T_{\pi(1)}, T_{\pi(2)}, \dots , T_{\pi(k)}$
+	
+	Un ordonnancement est séquentialisable (serializable) s'il existe un ordonnancement de $\ens{T_1, \dots , T_k}$ qui "donne le même résultat".
+	
+	Il faut un critère précis pour déterminer quand un ordonnancement est séquentialisable et un protocole d'exécution des transactions pour garantir la séquentialisabilité.
+
+
+		\subsection{Critère de séquentialisabilité basé sur les conflits}
+		
+		Deux actions $a_1$ et $a_2$ sont en conflit si l'exécution de $a_1;a_2$ peut donner un résultat différent de $a_2;a_1$.
+		
+		\paragraph{Critère} Un ordonnancement est séquentialisable par rapport aux conflits s'il peut être transformé en un ordonnancement séquentiel par permutations successives d'actions qui ne sont pas en conflit.
+		
+		Un ordonnancement peut être séquentialisable sans l'être par rapport aux conflits, l'intérêt du critère "par rapport aux conflits" est qu'il est plus facile à exploiter.
+		
+		\paragraph{Déterminer la séquentialisabilité} Une transaction $T_i$ précède une transaction $T_j$ dans un ordonnancement donné s'il existe une action $a_i$ de $T_i$ qui précède une action $a_j$ de $T_j$ avec laquelle elle est en conflit.
+		
+		Le graphe de précédence d'un ordonnancement d'un ensemble de transactions $T = \ens{T_1, \dots , T_k}$ est le graphe $(V, E)$ tel que
+		
+		\begin{itemize}
+			\item l'ensemble des sommets $V$ est l'ensemble des transactions $T$
+			\item l'ensemble des arcs E est l'ensemble des paires $(T_i, T_j)$ telles que $T_i$ précède $T_j$ dans l'ordonnancement donné
+		\end{itemize}
+		
+		\underline{Théorème} : un ordonnancement est séquentialisable par rapport aux conflits ssi son graphe de précédence est sans cycle.
+		
+		\underline{Preuve}
+		
+		\begin{itemize}
+			\item[$\Leftarrow$] si le graphe est sans cycle, il contient au moins un noeud dans lequel n'entre aucun arc.
+			
+			Les actions de la transaction correspondant à ce noeud ne sont donc en conflit avec aucune action qui les précède dans l'ordonnancement.
+			
+			Les actions peuvent être donc déplacées vers le début de l'ordonnancement en ne les permutant qu'avec des actions avec lesquelles elles ne sont pas en conflit
+			
+			En répétant le même raisonnement avec le graphe dont le noeud traité a été éliminé, on peut construire de proche en proche un ordonnancement séquentiel correspondant à l'ordonnancement de départ
+			
+			\item[$\Rightarrow$] Supposons donc que dans le graphe de précédence, il y a un cycle $T_1 \rightarrow T_2 \rightarrow \dots \rightarrow T_n \rightarrow T_1$.
+			
+			Vu que la permutation d'actions qui ne sont pas en conflit ne change par le graphe de précédence, dans un ordonnancement séquentiel correspondant, les actions de $T_1$ doivent précéder celles de $T_2$,\dots qui précèdent celles de $T_n$, qui précèdent celles de $T_1$, ce qui est impossible.
+			\end{itemize}
+			
+	\section{Algorithme d'ordonnancement : les verrous}
+	
+	Pour garantir la séquentialisabilité, on peut utiliser l'exclusion mutuelle des transactions (par exemple avec un sémaphore), mais cette contrainte est souvent trop restrictive.
+	
+	On va supposer que l'on n'assure l'exclusion mutuelle qu'au niveau des lectures/écritures. On utilise deux opérations :
+	
+	\begin{itemize}
+		\item $lock(D, mode)$ ou $mode$ est une lecture $r$ où une écriture $w$
+		\item $unlock(D)$
+	\end{itemize}
+		
+	La règle est de verrouiller une donnée lors de sa première utilisation et de la déverrouiller après sa dernière utilisation.
+	
+		\subsection{Règle des 2 phases (2 phase locking)}
+		
+		Chaque donnée est verrouillée avant sa première utilisation et déverrouillée après sa dernière utilisation.
+		
+		Aucune opération de verrouillage ne peut suivre une opération de déverrouillage de la même transaction. On distingue donc deux phases : verrouillage et déverrouillage.
+		
+		\underline{Théorème} : si un ordonnancement est obtenu en respectant la règle des deux phases, il est séquentialisable.
+		\pagebreak
+		
+		\underline{Preuve}
+		
+		\dessin{19}
+		
+		Le problème est que la règle des deux phases garantit la séquentialisabilité, mais elle n'exclut pas la présence de blocages (deadlocks) ou d'exclusion d'un processus (starvation).
+		
+		\dessin{20}
+		
+		
+		\subsection{Prévention des blocages}
+		
+		On impose un ordre sur les transactions : $T_i < T_j$ si $T_i$ a démarré avant $T_j$.
+		
+		On applique la politique suivante : si une transaction $T_i$ dit avoir accès à une donnée verrouillée par $T_j$, alors
+		
+		\begin{itemize}
+			\item si $T_i > T_j$, $T_i$ attend
+			\item si $T_i < T_j$, la transaction $T_j$ est annulée (rolled back) et $T_i$ poursuit son exécution
+		\end{itemize}
+		
+		La transaction la plus ancienne poursuit toujours son opération et il n'y a pas de blocage possible.
+		
+		\subsection{Récupération en cas d'erreurs}		
+		
+		 Le problème est de gérer les transactions qui ont été interrompues.
+		
+		Les erreurs possibles :
+		
+		\begin{itemize}
+			\item annulstion d'une transaction
+			\item arrêt du système
+			\item perte d'une partie du contenu du disque
+		\end{itemize}
+		
+		\pagebreak
+		Modèle utilisé :
+		
+		\begin{itemize}
+			\item les données sont transférées de et vers le disque bloc par bloc (page par page) par des opérations atomiques
+			\item chaque transaction $T$ se termine par
+			
+			\begin{itemize}
+				\item soit un $commit(T)$ : les modifications sont appliquées à la BDD
+				\item soit un $abort(T)$ : la transaction est annulée, les modifications ne sont pas appliquées
+			\end{itemize}
+		\end{itemize}
+		
+		\subsection{Fichier historique}
+		
+		On utilise un fichier log pour pouvoir récupérer des erreurs ; on y sauve
+		
+		\begin{itemize}
+			\item le début de chaque transaction
+			\item chaque modification effectuée par une transaction
+			\item les opérations $commit(T)$ effectuées
+			\item les points de synchronisation
+		\end{itemize}
+		
+		Lorsqu'une transaction modifie une page, cela est directement logé, mais les pages ne sont pas modifiées (on retarde donc les opérations unlock).
+		
+		Si la transaction se termine normalement, $commit(T)$ est ajouté au log, qui est sauvé sur le disque.
+		
+		Les modifications effectuées par la transaction sont effectivement réalisées avec unlock, les pages correspondantes sont sauvées sur le disque ou non.
+		
+		On impose périodiquement un point de synchronisation (checkpoint) : les nouvelles transactions sont interdites et on attend que toutes les transactions en cours soient terminées. On sauve ensuite toutes les pages modifiées sur le disque.
+		
+		Méthodes de récupération :
+		
+		\begin{itemize}
+			\item arrêt d'une transaction : ne rien faire, car les modifications ne sont pas effectuées
+			\item arrêt du système : avec le fichier historique, on réexécute tous les transactions dont le commit se trouve après le dernier point de synchronisation
+			\item perte de contenu, idem, mais à partir du dernier point de synchronisation correspondant à une sauvegarde que l'on peut restaurer
+		\end{itemize}
+		
+		Le log ne peut être perdu, c'est pour ça qu'il est dupliqué.
+		
+	\section{Transactions en SQL}
+	
+	Il y a une gestion complète des transactions ; la fin d'une transaction est signalée par la commande \texttt{commmit} ou \texttt{rollback}. Le début est signalé par \texttt{start transaction}.
+	
+	Il y a également un verrouillage de tables et un sauvetage immédiat sur disque des modifications. Les verrouillage et déverrouillage se font avec \texttt{lock tables} et \texttt{unlock tables}.
+	
+	Il y a plusieurs modes de gestion des transaction : \texttt{set transaction isolation level \dots}
+	
+	\begin{itemize}
+		\item \texttt{serializable} : le plus contraignant, les transactions sont effectuées de façon séquentialisables
+		\item \texttt{read uncommited} : la lecture de données modifiées par d'autres actions qui ne sont pas achevées (commit exécuté) est possible
+		\item \texttt{read commited} : on ne lit que des données modifiées par des transactions terminées, mais des lectures multiples des mêmes données peuvent reproduire un résultat différent
+		\item \texttt{reapatable read} : on ne voit que des données modifiées par des transactions terminées et les lectures multiples donnent le même résultat, si ce n'est que des nouveaux tuples peuvent apparaître entre deux lectures.
+	\end{itemize}
+	
+	Le choix de niveau d'isolation est un compromis entre fiabilité, facilité d'utilisation et performances. La définition exacte des niveaux d'isolation dépend du système utilisé.
